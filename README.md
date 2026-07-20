@@ -1,3 +1,6 @@
+<img width="1280" height="720" alt="1 0 main" src="https://github.com/user-attachments/assets/9260c0f4-15ce-4848-9b0d-24e65a168c7f" />
+
+
 # Gaussian Splatting plugin by KIRI Engine
 
 Render, style, and animate Gaussian Splat scenes directly inside Adobe After Effects.
