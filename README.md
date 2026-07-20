@@ -126,4 +126,4 @@ After building, copy the generated plugin files into the After Effects Plug-ins 
 
 ## Credits And Acknowledgements
 
-Thanks to everybody who contributes to this good work from the KIRI Engine team.
+Thanks to everybody who contributed from the KIRI Engine team.
