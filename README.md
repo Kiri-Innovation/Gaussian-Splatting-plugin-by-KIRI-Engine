@@ -23,7 +23,7 @@ The Gaussian Splatting plugin by KIRI Engine is a free After Effects plugin for 
 
 Download the latest available plugin build from the **Releases** section of this GitHub repository:
 
-https://github.com/Kiri-Innovation/AE_3DGS_PLUGIN/releases
+https://github.com/Kiri-Innovation/Gaussian-Splatting-plugin-by-KIRI-Engine/releases
 
 The release package may include:
 
@@ -98,7 +98,8 @@ Because this is a free plugin, we may not always be able to fix issues or publis
 Clone the repository with submodules:
 
 ```bash
-git clone --recursive https://github.com/Kiri-Innovation/AE_3DGS_PLUGIN.git
+git clone --recursive https://github.com/Kiri-Innovation/Gaussian-Splatting-plugin-by-KIRI-Engine.git
+
 ```
 
 ### macOS
