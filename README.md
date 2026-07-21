@@ -95,14 +95,42 @@ Because this is a free plugin, we may not always be able to fix issues or publis
 
 ## Build From Source
 
-Clone the repository with submodules:
-
-```bash
-git clone --recursive https://github.com/Kiri-Innovation/Gaussian-Splatting-plugin-by-KIRI-Engine.git
+# Download
 
 ```
+git clone --recursive https://github.com/Kiri-Innovation/Gaussian-Splatting-plugin-by-KIRI-Engine.git
+```
 
-### macOS
+# Requirements
+
+## Common
+
+- CMake 3.5 or newer.
+- C++20 compiler.
+- Python 3 interpreter. `Kiri_GaussianSplatting` uses Python to generate shader headers during build.
+- Adobe After Effects SDK under `extern/AESDK`.
+- Third-party dependencies are expected to be available through git submodules in `extern/`.
+
+## Windows
+
+- Visual Studio / MSVC toolchain.
+- `cl` must be available for preprocessing `.r` resource files.
+- Windows graphics dependencies are built from submodules: `glad` and `glfw`.
+- The build generates `.aex` plug-ins.
+
+## macOS
+
+- Xcode.
+- macOS deployment target is set to 11.0.
+- Universal build is configured for `arm64;x86_64`.
+- Homebrew LLVM is required by `Kiri_PlyImporter` through `brew --prefix llvm`.
+- `rez` must be available for PiPL/resource generation.
+- macOS graphics/system dependencies include `Cocoa`, `OpenGL`, and `metal-cpp`.
+- The build generates `.plugin` bundles.
+
+# Build
+
+## macOS
 
 ```bash
 mkdir build
@@ -110,20 +138,42 @@ cd build
 cmake .. -GXcode -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 ```
 
-Open `Kiri_AE_3DGS.xcodeproj` and build `ALL_BUILD`.
-
-### Windows
+## Windows
 
 ```cmd
 md build
-cd build
+cd build 
 cmake ..
 ```
 
-Open `Kiri_AE_3DGS.sln` and build `ALL_BUILD`.
+Then open **Kiri_AE_3DGS.xcodeproj**  /  **Kiri_AE_3DGS.sln** , select the **Release** configuration, and run **ALL_BUILD** to build the project.
 
-After building, copy the generated plugin files into the After Effects Plug-ins folder.
+Only the **Release** build products are currently expected to run correctly in After Effects.
 
+After building , you should put the following products into your local AE plugins folder.
+
+```cmd
+// Windows
+build\Kiri_GaussianSplatting\Release\Kiri_GaussianSplatting.aex 
+build\Kiri_PlyImporter\Release\Kiri_PlyImporter.aex 
+
+// macOS
+build\Kiri_GaussianSplatting\Release\Kiri_GaussianSplatting.plugin
+build\Kiri_PlyImporter\Release\Kiri_PlyImporter.plugin
+```
+
+The default AE plugin path is as follows:
+
+```
+"C:/Program Files/Adobe/Adobe After Effects 2025/Support Files/Plug-ins" (Windows)
+"/Applications/Adobe After Effects 2025/Plug-ins"  (macOS)
+```
+
+The default log file path is as follows: 
+```
+C:/Users/xiaoh/AppData/Local/Kiri_GaussianSplatting/logs/app.log (Windows)
+/Users/kiri/Kiri_GaussianSplatting/logs/app.log (macOS)
+```
 
 ## Credits And Acknowledgements
 
