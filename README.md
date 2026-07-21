@@ -27,9 +27,9 @@ https://github.com/Kiri-Innovation/Gaussian-Splatting-plugin-by-KIRI-Engine/rele
 
 The release package may include:
 
-- `Kiri_GaussianSplatting`
-- `Kiri_PlyImporter`
-
+**- `UPDATE WHEN READY UPDATE WHEN READY UPDATE WHEN READY UPDATE WHEN READY`
+- `UPDATE WHEN READY UPDATE WHEN READY UPDATE WHEN READY UPDATE WHEN READY`
+**
 
 ## Installation
 
