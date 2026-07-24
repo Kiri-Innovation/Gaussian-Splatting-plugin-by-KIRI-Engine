@@ -1,0 +1,227 @@
+
+#pragma once
+
+typedef unsigned char		u_char;
+typedef unsigned short		u_short;
+typedef unsigned short		u_int16;
+typedef unsigned long		u_long;
+typedef short int			int16;
+#define PF_TABLE_BITS	12
+#define PF_TABLE_SZ_16	4096
+
+#include "AEConfig.h"
+
+#ifdef AE_OS_WIN
+	typedef unsigned short PixelType;
+	//#include <Windows.h>
+#endif
+
+
+#include "entry.h"
+#include "AE_Effect.h"
+#include "AE_EffectCB.h"
+#include "AE_Macros.h"
+#include "Param_Utils.h"
+#include "AE_EffectCBSuites.h"
+#include "String_Utils.h"
+#include "AE_GeneralPlug.h"
+#include "AEFX_ChannelDepthTpl.h"
+#include "AEGP_SuiteHandler.h"
+
+#include "Plugin/3DGS_Strings.h"
+#include <vector>
+#include <string>
+#include <unordered_map>
+#include <cstdint>
+#include <map>
+
+
+/* Versioning information */
+
+#define	MAJOR_VERSION	1
+#define	MINOR_VERSION	1
+#define	BUG_VERSION		0
+#define	STAGE_VERSION	PF_Stage_DEVELOP
+#define	BUILD_VERSION	1
+
+
+// paramIdx -> disk id
+// For version compatibility, do not try to modify or remove any "extra" variables.
+// Instead, try declaring def.ui_flags = PF_PUI_INVISIBLE when defining the UI.
+#define KIRI_PARAM_LIST(X) \
+    X(KIRI_INPUT							, 1)  \
+												  \
+    X(KIRI_SPLAT_ENABLE						, 2)  \
+    X(KIRI_LAYER							, 3)  \
+												  \
+    X(KIRI_ALIGN_TOPIC_BEGIN				, 4)  \
+	X(KIRI_ALIGN_ANCHOR_POSITION			, 5)  \
+	X(KIRI_ALIGN_SCALE						, 6)  \
+	X(KIRI_ALIGN_ROTATION_X					, 7)  \
+	X(KIRI_ALIGN_ROTATION_Y					, 8)  \
+	X(KIRI_ALIGN_ROTATION_Z					, 9)  \
+	X(KIRI_ALIGN_TOPIC_END					, 10) \
+												  \
+	X(KIRI_TRANSFORM_TOPIC_BEGIN			, 11) \
+	X(KIRI_TRANSFORM_POSITION				, 12) \
+	X(KIRI_TRANSFORM_SCALE					, 13) \
+	X(KIRI_TRANSFORM_ROTATION_X				, 14) \
+	X(KIRI_TRANSFORM_ROTATION_Y				, 15) \
+	X(KIRI_TRANSFORM_ROTATION_Z				, 16) \
+	X(KIRI_TRANSFORM_TOPIC_END				, 17) \
+	  											  \
+	X(KIRI_EFFECT_TOPIC_BEGIN				, 18) \
+												  \
+	X(KIRI_RENDER_TOPIC_BEGIN				, 19) \
+	X(KIRI_RENDER_SH_DEGREE					, 20) \
+	X(KIRI_RENDER_COLOR_ENBALE				, 21) \
+	X(KIRI_RENDER_COLOR_GRADIENT			, 22) \
+	X(KIRI_RENDER_COLOR_RAMP				, 23) \
+	X(KIRI_RENDER_COLOR_SHAPE_SIZE			, 24) \
+	X(KIRI_RENDER_COLOR_SHAPE_SCALE_X		, 25) \
+	X(KIRI_RENDER_COLOR_SHAPE_SCALE_Y		, 26) \
+	X(KIRI_RENDER_COLOR_SHAPE_SCALE_Z		, 27) \
+	X(KIRI_RENDER_COLOR_SHAPE_CENTER		, 28) \
+	X(KIRI_RENDER_COLOR_SHAPE_FEATHER		, 94) \
+	X(KIRI_RENDER_TOPIC_END					, 29) \
+												  \
+	X(KIRI_CROP_TOPIC_BEGIN					, 30) \
+	X(KIRI_CROP_ENBALE						, 31) \
+	X(KIRI_CROP_INVERT						, 32) \
+	X(KIRI_CROP_SHAPE_SIZE					, 33) \
+	X(KIRI_CROP_SHAPE_SCALE_X				, 34) \
+	X(KIRI_CROP_SHAPE_SCALE_Y				, 35) \
+	X(KIRI_CROP_SHAPE_SCALE_Z				, 36) \
+	X(KIRI_CROP_SHAPE_CENTER				, 37) \
+	X(KIRI_CROP_SHAPE_FEATHER				, 95) \
+	X(KIRI_CROP_TOPIC_END					, 38) \
+												  \
+	X(KIRI_SPLAT_SCALE_TOPIC_BEGIN			, 39) \
+	X(KIRI_SPLAT_SCALE_ENBALE				, 40) \
+	X(KIRI_SPLAT_SCALE_SIZE					, 41) \
+	X(KIRI_SPLAT_SCALE_RAMP					, 42) \
+	X(KIRI_SPLAT_SCALE_SHAPE_SIZE			, 43) \
+	X(KIRI_SPLAT_SCALE_SHAPE_SCALE_X		, 44) \
+	X(KIRI_SPLAT_SCALE_SHAPE_SCALE_Y		, 45) \
+	X(KIRI_SPLAT_SCALE_SHAPE_SCALE_Z		, 46) \
+	X(KIRI_SPLAT_SCALE_SHAPE_CENTER			, 47) \
+	X(KIRI_SPLAT_SCALE_SHAPE_FEATHER		, 96) \
+	X(KIRI_SPLAT_SCALE_TOPIC_END			, 48) \
+	  											  \
+	X(KIRI_SPLAT_NOISE_TOPIC_BEGIN			, 49) \
+	X(KIRI_SPLAT_NOISE_ENABLE				, 50) \
+	X(KIRI_SPLAT_NOISE_SHAPE_SIZE			, 51) \
+	X(KIRI_SPLAT_NOISE_SHAPE_SCALE_X		, 52) \
+	X(KIRI_SPLAT_NOISE_SHAPE_SCALE_Y		, 53) \
+	X(KIRI_SPLAT_NOISE_SHAPE_SCALE_Z		, 54) \
+	X(KIRI_SPLAT_NOISE_SHAPE_CENTER			, 55) \
+	X(KIRI_SPLAT_NOISE_SHAPE_FEATHER		, 97) \
+	X(KIRI_SPLAT_NOISE_STRENGTH				, 56) \
+	X(KIRI_SPLAT_NOISE_STRENGTH_X			, 102) \
+	X(KIRI_SPLAT_NOISE_STRENGTH_Y			, 103) \
+	X(KIRI_SPLAT_NOISE_STRENGTH_Z			, 104) \
+	X(KIRI_SPLAT_NOISE_OCTAVES				, 57) \
+	X(KIRI_SPLAT_NOISE_PERSISTENCE			, 58) \
+	X(KIRI_SPLAT_NOISE_LACUNARITY			, 59) \
+	X(KIRI_SPLAT_NOISE_TOPIC_END			, 60) \
+												  \
+	X(KIRI_SPLAT_OPACITY_TOPIC_BEGIN		, 61) \
+	X(KIRI_SPLAT_OPACITY_ENABLE				, 62) \
+	X(KIRI_SPLAT_MIN_OPACITY				, 63) \
+	X(KIRI_SPLAT_MAX_OPACITY				, 100) \
+	X(KIRI_SPLAT_OPACITY_RAMP				, 64) \
+	X(KIRI_SPLAT_OPACITY_SHAPE_SIZE			, 65) \
+	X(KIRI_SPLAT_OPACITY_SHAPE_SCALE_X		, 66) \
+	X(KIRI_SPLAT_OPACITY_SHAPE_SCALE_Y		, 67) \
+	X(KIRI_SPLAT_OPACITY_SHAPE_SCALE_Z		, 68) \
+	X(KIRI_SPLAT_OPACITY_SHAPE_CENTER		, 69) \
+	X(KIRI_SPLAT_OPACITY_SHAPE_FEATHER		, 98) \
+	X(KIRI_SPLAT_OPACITY_TOPIC_END			, 70) \
+	  											  \
+	X(KIRI_SPLAT_DISPLACEMENT_TOPIC_BEGIN	 ,71) \
+	X(KIRI_SPLAT_DISPLACEMENT_ENABLE		 ,72) \
+	X(KIRI_SPLAT_DISPLACEMENT_OFFSET		 ,73) \
+	X(KIRI_SPLAT_DISPLACEMENT_OFFSET_RAMP	 ,74) \
+	X(KIRI_SPLAT_DISPLACEMENT_SCALE			 ,75) \
+	X(KIRI_SPLAT_DISPLACEMENT_SCALE_RAMP	 ,76) \
+	X(KIRI_SPLAT_DISPLACEMENT_ROTATION_X	 ,77) \
+	X(KIRI_SPLAT_DISPLACEMENT_ROTATION_Y	 ,78) \
+	X(KIRI_SPLAT_DISPLACEMENT_ROTATION_Z	 ,79) \
+	X(KIRI_SPLAT_DISPLACEMENT_ROTATION_RAMP	 ,80) \
+	X(KIRI_SPLAT_DISPLACEMENT_SHAPE_SIZE	 ,81) \
+	X(KIRI_SPLAT_DISPLACEMENT_SHAPE_SCALE_X	 ,82) \
+	X(KIRI_SPLAT_DISPLACEMENT_SHAPE_SCALE_Y	 ,83) \
+	X(KIRI_SPLAT_DISPLACEMENT_SHAPE_SCALE_Z	 ,84) \
+	X(KIRI_SPLAT_DISPLACEMENT_SHAPE_CENTER	 ,85) \
+	X(KIRI_SPLAT_DISPLACEMENT_SHAPE_FEATHER  ,99) \
+	X(KIRI_SPLAT_DISPLACEMENT_TOPIC_END		, 86) \
+												  \
+	X(KIRI_SPLAT_DENSE_TOPIC_BEGIN			, 105) \
+	X(KIRI_SPLAT_DENSE_ENABLE				, 106) \
+	X(KIRI_SPLAT_DENSE_DENSITY				, 113) \
+	X(KIRI_SPLAT_DENSE_SHAPE_RAMP			, 115) \
+	X(KIRI_SPLAT_DENSE_SHAPE_SIZE			, 107) \
+	X(KIRI_SPLAT_DENSE_SHAPE_SCALE_X		, 108) \
+	X(KIRI_SPLAT_DENSE_SHAPE_SCALE_Y		, 109) \
+	X(KIRI_SPLAT_DENSE_SHAPE_SCALE_Z		, 110) \
+	X(KIRI_SPLAT_DENSE_SHAPE_CENTER			, 111) \
+	X(KIRI_SPLAT_DENSE_SHAPE_FEATHER		, 114) \
+	X(KIRI_SPLAT_DENSE_TOPIC_END			, 112) \
+												   \
+	X(KIRI_EFFECT_TOPIC_END					, 87)  \
+												   \
+	X(KIRI_ADVANCED_TOPIC_BEGIN				, 88)  \
+	X(KIRI_ADVANCED_CAMERA_FOCAL_LENGTH		, 89)  \
+	X(KIRI_ADVANCED_SPLAT_CROP_NEAR			, 90)  \
+	X(KIRI_ADVANCED_SPLAT_CROP_FAR			, 101) \
+	X(KIRI_ADVANCED_SPLAT_CROP_MAX_SCALE	, 91)  \
+	X(KIRI_ADVANCED_SPLAT_CROP_MIN_SCALE	, 92)  \
+												   \
+	X(KIRI_ADVANCED_DOF_TOPIC_BEGIN			, 116) \
+	X(KIRI_ADVANCED_DOF_ENABLE				, 117) \
+	X(KIRI_ADVANCED_DOF_FOCUS_DISTANCE		, 118) \
+	X(KIRI_ADVANCED_DOF_APERTURE			, 119) \
+	X(KIRI_ADVANCED_DOF_BLUR_LEVEL			, 120) \
+	X(KIRI_ADVANCED_DOF_TOPIC_END			, 121) \
+												   \
+	X(KIRI_ADVANCED_TOPIC_END				, 93)
+
+
+enum KIRIParamIdx : PF_ParamIndex {
+#define X(name, id) name,
+		KIRI_PARAM_LIST(X)
+#undef X
+		KIRI_NUM_PARAMS
+};
+
+static constexpr int paramIdx2DiskID[] = {
+#define X(name, id) id,
+	KIRI_PARAM_LIST(X)
+#undef X
+};
+
+#define DISK_ID(paramIdx) paramIdx2DiskID[paramIdx]
+
+
+constexpr uint32_t Fnv1a(const char* s) {
+	uint32_t hash = 2166136261u;
+	while (*s) {
+		hash ^= static_cast<uint8_t>(*s++);
+		hash *= 16777619u;
+	}
+	return hash;
+}
+
+
+extern "C" {
+
+	DllExport
+	PF_Err
+	EffectMain(
+		PF_Cmd			cmd,
+		PF_InData		*in_data,
+		PF_OutData		*out_data,
+		PF_ParamDef		*params[],
+		PF_LayerDef		*output,
+		void			*extra);
+}

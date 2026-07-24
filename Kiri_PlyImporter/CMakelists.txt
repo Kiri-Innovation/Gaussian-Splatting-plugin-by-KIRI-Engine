@@ -1,0 +1,140 @@
+project(Kiri_PlyImporter LANGUAGES C CXX)
+
+if(APPLE)
+    # auto get Homebrew llvm path
+    execute_process(COMMAND brew --prefix llvm OUTPUT_VARIABLE LLVM_BIN OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    set(CMAKE_C_COMPILER ${LLVM_BIN}/bin/clang CACHE STRING "C compiler" FORCE)
+    set(CMAKE_CXX_COMPILER ${LLVM_BIN}/bin/clang++ CACHE STRING "C++ compiler" FORCE)
+endif()
+
+# ===== source + header  =====
+file(GLOB SRC_FILES
+    CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+)
+
+file(GLOB_RECURSE HEADER_FILES
+    CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
+)
+
+
+#===== create build target =====
+add_library(${PROJECT_NAME} MODULE
+    ${SRC_FILES}
+    ${HEADER_FILES}
+)
+
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src"     PREFIX "src"     FILES ${SRC_FILES})
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/include" PREFIX "include" FILES ${HEADER_FILES})
+#===== set header folder =====
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(
+	${PROJECT_NAME} PRIVATE
+	AESDK
+)
+
+if(APPLE)
+	set( CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum MacOs Version" )
+	set( CMAKE_OSX_ARCHITECTURES "arm64;x86_64" )
+	
+	target_link_libraries(${PROJECT_NAME} 
+	PRIVATE 
+		"-framework Cocoa"
+	)
+endif()
+
+if(WIN32)
+endif()
+
+
+if(CMAKE_GENERATOR STREQUAL "Xcode")
+
+	message(STATUS "Platform: macOS")
+
+    add_definitions(-DOPENMP_ENABLED)
+    find_program( AFX_REZ rez /Developer/Tools )
+    add_custom_command(
+  		OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.rsrc
+  		COMMAND ${AFX_REZ}
+  		ARGS ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.r
+  			-o ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.rsrc
+  			-useDF
+			${PIPL_INCLUDES}
+      	-i ${AESDK_ROOT}/Headers
+      	-i ${AESDK_ROOT}/Headers/SP
+      	-i ${AESDK_ROOT}/Util
+      	-i ${AESDK_ROOT}/Resources
+  			-D __MACH__
+  	)
+
+	set_source_files_properties(
+		${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.rsrc
+		PROPERTIES
+		MACOSX_PACKAGE_LOCATION Resources/
+	)
+    
+    target_sources( ${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.rsrc )
+
+	set_target_properties( ${PROJECT_NAME} PROPERTIES PREFIX "" )
+	set_target_properties( ${PROJECT_NAME} PROPERTIES SUFFIX "" )
+	string( TIMESTAMP BUILD_YEAR "%Y" )
+	set_target_properties( ${PROJECT_NAME} PROPERTIES 
+    BUNDLE True
+    MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
+    BUNDLE_EXTENSION "plugin"
+    MACOSX_BUNDLE_INFO_STRING "${PROJECT_NAME}"
+    MACOSX_BUNDLE_GUI_IDENTIFIER "com.adobe.AfterEffects.${PROJECT_NAME}"
+    MACOSX_BUNDLE_COPYRIGHT "MIT LICENSED ${BUILD_YEAR}."
+  )
+
+	# PkgInfo
+	add_custom_command(
+		OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/PkgInfo
+		COMMAND echo "AEgxFXTC" > ${CMAKE_CURRENT_BINARY_DIR}/PkgInfo
+	)
+
+	set_source_files_properties(
+		${CMAKE_CURRENT_BINARY_DIR}/PkgInfo
+		PROPERTIES
+		MACOSX_PACKAGE_LOCATION ""
+	)
+
+	target_sources( ${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/PkgInfo )
+
+endif()
+
+if(WIN32)
+    #  .r -> .rr
+	add_custom_command(
+		OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.rr
+		COMMAND
+		cl /I \"${AESDK_ROOT}/Headers\" /EP \"${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.r\" > ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.rr
+	)
+    # .rr -> .rrc
+	add_custom_command(
+		DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.rr
+		OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.rrc
+		COMMAND ${AFX_REZ} ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.rr ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.rrc
+	)
+    # .rrc -> .rc
+	add_custom_command(
+		DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.rrc
+		OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.rc
+		COMMAND cl /D "MSWindows" /EP ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.rrc > ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.rc
+	)
+    # add .rc to target
+	target_sources(
+		${PROJECT_NAME} PRIVATE
+		${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.rc
+	)
+
+	set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".aex")
+
+endif()

@@ -1,0 +1,27 @@
+[submodule "extern/oneTBB"]
+	path = extern/oneTBB
+	url = https://github.com/uxlfoundation/oneTBB.git
+[submodule "extern/stb"]
+	path = extern/stb
+	url = https://github.com/nothings/stb.git
+[submodule "extern/plog"]
+	path = extern/plog
+	url = git@github.com:SergiusTheBest/plog.git
+[submodule "magic_enum"]
+	path = magic_enum
+	url = https://github.com/Neargye/magic_enum.git
+[submodule "extern/magic_enum"]
+	path = extern/magic_enum
+	url = https://github.com/Neargye/magic_enum.git
+[submodule "extern/glm"]
+	path = extern/glm
+	url = https://github.com/icaven/glm.git
+[submodule "extern/glfw"]
+	path = extern/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "extern/glad"]
+	path = extern/glad
+	url = https://github.com/Dav1dde/glad.git
+[submodule "extern/googletest"]
+	path = extern/googletest
+	url = https://github.com/google/googletest.git

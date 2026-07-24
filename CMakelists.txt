@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 3.5)
+
+project(Kiri_AE_3DGS LANGUAGES C CXX)
+
+# ===== global settings  =====
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF CACHE BOOL "Disable C++ module scanning" FORCE)
+enable_testing()
+
+# ===== subdirectory  =====
+set(EXTERN_PATH ${CMAKE_CURRENT_SOURCE_DIR}/extern)
+set(AESDK_ROOT ${EXTERN_PATH}/AESDK)
+add_subdirectory(${EXTERN_PATH})
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Kiri_GaussianSplatting)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Kiri_PlyImporter)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test)

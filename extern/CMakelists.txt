@@ -1,0 +1,45 @@
+add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/AESDK )
+if(WIN32)
+    add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/glad/cmake)
+    glad_add_library(glad STATIC REPRODUCIBLE API gl:core=4.5)
+    add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/glfw)
+endif()
+if(APPLE)
+    add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/metal-cpp )
+endif()
+add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
+add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/glm)
+add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/magic_enum)
+add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/plog)
+
+set(TBB_TEST OFF CACHE BOOL "" FORCE)
+set(TBB_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(TBB_STRICT OFF CACHE BOOL "" FORCE)
+
+set(_extern_build_shared_libs_was_defined OFF)
+if(DEFINED BUILD_SHARED_LIBS)
+    set(_extern_build_shared_libs_was_defined ON)
+    set(_extern_build_shared_libs "${BUILD_SHARED_LIBS}")
+endif()
+
+if(APPLE)
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries by default" FORCE)
+else()
+    set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries by default" FORCE)
+endif()
+
+add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/oneTBB)
+
+if(_extern_build_shared_libs_was_defined)
+    set(BUILD_SHARED_LIBS "${_extern_build_shared_libs}" CACHE BOOL "Build shared libraries by default" FORCE)
+else()
+    unset(BUILD_SHARED_LIBS CACHE)
+endif()
+unset(_extern_build_shared_libs)
+unset(_extern_build_shared_libs_was_defined)
+
+#add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/taskflow)
+
+set(gtest_force_shared_crt ON CACHE BOOL "Use the shared MSVC runtime for GoogleTest." FORCE)
+add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/googletest)

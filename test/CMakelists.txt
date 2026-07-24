@@ -1,0 +1,49 @@
+cmake_minimum_required(VERSION 3.20)
+
+project(Test LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# -----------------------------
+# test executable
+# -----------------------------
+file(GLOB_RECURSE SRC_FILES
+    CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+)
+
+add_executable(Test
+    ${SRC_FILES}
+)
+
+# -----------------------------
+# link libraries
+# -----------------------------
+
+target_link_libraries(Test
+    PRIVATE
+    GTest::gtest
+    GTest::gtest_main
+	plog
+    TBB::tbb
+)
+
+# -----------------------------
+# enable ctest
+# -----------------------------
+
+target_compile_options(${PROJECT_NAME} PRIVATE
+		$<$<COMPILE_LANGUAGE:CXX>:-fexperimental-library>
+	)
+
+	target_link_options(${PROJECT_NAME} PRIVATE
+		-fexperimental-library
+	)
+
+enable_testing()
+
+add_test(
+    NAME Test
+    COMMAND Test
+)

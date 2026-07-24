@@ -1,0 +1,4 @@
+/build/
+*.sh
+*.DS_Store
+*.ply

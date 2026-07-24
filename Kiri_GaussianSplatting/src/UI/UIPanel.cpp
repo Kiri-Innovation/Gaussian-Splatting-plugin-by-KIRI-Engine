@@ -1,0 +1,1471 @@
+#include "UI/UIPanel.h"
+#include "UI/ColorGradientUI.h"
+#include "AE_Macros.h"
+#include "Common/Global.h"
+
+
+PF_Err SetupLayerInputUI(PF_InData* in_data, PF_OutData* out_data) {
+	PF_Err		err = PF_Err_NONE;
+	PF_ParamDef	def;
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_CHECKBOXX(
+		STR(STRID_SPLAT_ENABLE),
+		1,
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_SPLAT_ENABLE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	def.flags = PF_ParamFlag_SUPERVISE;
+	PF_ADD_LAYER(
+		STR(STRID_SELECT_FOOTAGE_LAYER),
+		PF_LayerDefault_NONE,
+		DISK_ID(KIRI_LAYER)
+	);
+
+
+	return err;
+}
+
+PF_Err SetupTransformUI(PF_InData* in_data, PF_OutData* out_data) {
+	PF_Err		err = PF_Err_NONE;
+	PF_ParamDef	def;
+
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_TOPICX(
+		STR(STRID_TRANSFORM_TOPIC),
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_TRANSFORM_TOPIC_BEGIN)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_POINT_3D(
+		STR(STRID_TRANSFORM_POSITION),
+		0, 0, 0,
+		DISK_ID(KIRI_TRANSFORM_POSITION)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_TRANSFORM_SCALE),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_TRANSFORM_SCALE)
+	);
+
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_ANGLE(
+		STR(STRID_TRANSFORM_ROTATION_X),
+		0,
+		DISK_ID(KIRI_TRANSFORM_ROTATION_X)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_ANGLE(
+		STR(STRID_TRANSFORM_ROTATION_Y),
+		0,
+		DISK_ID(KIRI_TRANSFORM_ROTATION_Y)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_ANGLE(
+		STR(STRID_TRANSFORM_ROTATION_Z),
+		0,
+		DISK_ID(KIRI_TRANSFORM_ROTATION_Z)
+	);
+
+
+	AEFX_CLR_STRUCT(def);
+	PF_END_TOPIC(DISK_ID(KIRI_TRANSFORM_TOPIC_END));
+
+	return err;
+}
+
+PF_Err SetupRenderUI(PF_InData* in_data, PF_OutData* out_data) {
+	PF_Err		err = PF_Err_NONE;
+	PF_ParamDef	def;
+
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_TOPICX(
+		STR(STRID_RENDER_TOPIC),
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_RENDER_TOPIC_BEGIN)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_POPUPX(
+		STR(STRID_RENDER_SHDEGREE),
+		4,
+		4,
+		"0|1|2|3",
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_RENDER_SH_DEGREE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_CHECKBOXX(
+		STR(STRID_RENDER_COLOR_ENABLE),
+		0,
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_RENDER_COLOR_ENBALE)
+	);
+
+	//AEFX_CLR_STRUCT(def);
+	//PF_ADD_FLOAT_SLIDER(
+	//	STR(STRID_RENDER_SHDEGREE),
+	//	0.0f,
+	//	3.0f,
+	//	0.0f,
+	//	3.0f,
+	//	0.0f,
+	//	3.0f,
+	//	PF_Precision_INTEGER,
+	//	PF_ValueDisplayFlag_NONE,
+	//	0,
+	//	KIRI_RENDER_SH_DEGREE
+	//);
+
+	ERR(SetupColorGradientUI(in_data, DISK_ID(KIRI_RENDER_COLOR_GRADIENT) , out_data));
+	
+	ERR(SetupBezierUI(in_data, DISK_ID(KIRI_RENDER_COLOR_RAMP), STRID_RENDER_COLOR_RAMP , out_data));
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_RENDER_COLOR_SHAPE_SIZE),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_RENDER_COLOR_SHAPE_SIZE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_RENDER_COLOR_SHAPE_SCALE_X),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_RENDER_COLOR_SHAPE_SCALE_X)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_RENDER_COLOR_SHAPE_SCALE_Y),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_RENDER_COLOR_SHAPE_SCALE_Y)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_RENDER_COLOR_SHAPE_SCALE_Z),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_RENDER_COLOR_SHAPE_SCALE_Z)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_POINT_3D(
+		STR(STRID_RENDER_COLOR_SHAPE_CENTER),
+		0, 0, 0,
+		DISK_ID(KIRI_RENDER_COLOR_SHAPE_CENTER)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_RENDER_COLOR_SHAPE_FEATHER),
+		0.0f,
+		100.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		50.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_RENDER_COLOR_SHAPE_FEATHER)
+	);
+
+
+
+	AEFX_CLR_STRUCT(def);
+	PF_END_TOPIC(DISK_ID(KIRI_RENDER_TOPIC_END));
+
+	return err;
+}
+
+PF_Err SetupCropUI(PF_InData* in_data, PF_OutData* out_data) {
+	PF_Err		err = PF_Err_NONE;
+	PF_ParamDef	def;
+
+	AEFX_CLR_STRUCT(def);
+
+	PF_ADD_TOPICX(
+		STR(STRID_CROP_TOPIC),
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_CROP_TOPIC_BEGIN)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_CHECKBOXX(
+		STR(STRID_CROP_ENABLE),
+		0,
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_CROP_ENBALE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_CHECKBOXX(
+		STR(STRID_CROP_INVERT),
+		0,
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_CROP_INVERT)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_CROP_SHAPE_SIZE),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_CROP_SHAPE_SIZE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_CROP_SHAPE_SCALE_X),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_CROP_SHAPE_SCALE_X)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_CROP_SHAPE_SCALE_Y),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_CROP_SHAPE_SCALE_Y)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_CROP_SHAPE_SCALE_Z),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_CROP_SHAPE_SCALE_Z)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_POINT_3D(
+		STR(STRID_CROP_SHAPE_CENTER),
+		0, 0, 0,
+		DISK_ID(KIRI_CROP_SHAPE_CENTER)
+	);
+
+
+	AEFX_CLR_STRUCT(def);
+	def.ui_flags = PF_PUI_INVISIBLE;
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_CROP_SHAPE_FEATHER),
+		0.0f,
+		100.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		50.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_CROP_SHAPE_FEATHER)
+	);
+
+
+	AEFX_CLR_STRUCT(def);
+	PF_END_TOPIC(DISK_ID(KIRI_CROP_TOPIC_END));
+
+	return err;
+}
+
+PF_Err SetupSplatScaleUI(PF_InData* in_data, PF_OutData* out_data) {
+	PF_Err		err = PF_Err_NONE;
+	PF_ParamDef	def;
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_TOPICX(
+		STR(STRID_SPLAT_SCALE_TOPIC),
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_SPLAT_SCALE_TOPIC_BEGIN)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_CHECKBOXX(
+		STR(STRID_SPLAT_SCALE_ENABLE),
+		0,
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_SPLAT_SCALE_ENBALE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_SCALE_SIZE),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_SCALE_SIZE)
+	);
+
+
+	ERR(SetupBezierUI(in_data, DISK_ID(KIRI_SPLAT_SCALE_RAMP), STRID_SPLAT_SCALE_RAMP, out_data));
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_SCALE_SHAPE_SIZE),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_SCALE_SHAPE_SIZE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_SCALE_SHAPE_SCALE_X),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_SCALE_SHAPE_SCALE_X)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_SCALE_SHAPE_SCALE_Y),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_SCALE_SHAPE_SCALE_Y)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_SCALE_SHAPE_SCALE_Z),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_SCALE_SHAPE_SCALE_Z)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_POINT_3D(
+		STR(STRID_SPLAT_SCALE_SHAPE_CENTER),
+		0, 0, 0,
+		DISK_ID(KIRI_SPLAT_SCALE_SHAPE_CENTER)
+	);
+
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_SCALE_SHAPE_FEATHER),
+		0.0f,
+		100.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		50.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_SCALE_SHAPE_FEATHER)
+	);
+
+
+	AEFX_CLR_STRUCT(def);
+	PF_END_TOPIC(DISK_ID(KIRI_SPLAT_SCALE_TOPIC_END));
+
+	return err;
+}
+
+PF_Err SetupSplatNoiseUI(PF_InData* in_data, PF_OutData* out_data) {
+	PF_Err		err = PF_Err_NONE;
+	PF_ParamDef	def;
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_TOPICX(
+		STR(STRID_SPLAT_NOISE_TOPIC),
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_SPLAT_NOISE_TOPIC_BEGIN)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_CHECKBOXX(
+		STR(STRID_SPLAT_NOISE_ENABLE),
+		0,
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_SPLAT_NOISE_ENABLE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_NOISE_SHAPE_SIZE),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_NOISE_SHAPE_SIZE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_NOISE_SHAPE_SCALE_X),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_NOISE_SHAPE_SCALE_X)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_NOISE_SHAPE_SCALE_Y),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_NOISE_SHAPE_SCALE_Y)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_NOISE_SHAPE_SCALE_Z),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_NOISE_SHAPE_SCALE_Z)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_POINT_3D(
+		STR(STRID_SPLAT_NOISE_SHAPE_CENTER),
+		0, 0, 0,
+		DISK_ID(KIRI_SPLAT_NOISE_SHAPE_CENTER)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	def.ui_flags = PF_PUI_INVISIBLE;
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_NOISE_SHAPE_FEATHER),
+		0.0f,
+		100.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		50.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_NOISE_SHAPE_FEATHER)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_NOISE_STRENGTH),
+		-10000.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_NOISE_STRENGTH)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_NOISE_STRENGTH_X),
+		-10000.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_NOISE_STRENGTH_X)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_NOISE_STRENGTH_Y),
+		-10000.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_NOISE_STRENGTH_Y)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_NOISE_STRENGTH_Z),
+		-10000.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_NOISE_STRENGTH_Z)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_NOISE_OCTAVES),
+		0.0f,
+		8.0f,
+		0.0f,
+		8.0f,
+		1.0f,
+		6.0f,
+		PF_Precision_INTEGER,
+		PF_ValueDisplayFlag_NONE,
+		0,
+		DISK_ID(KIRI_SPLAT_NOISE_OCTAVES)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_NOISE_PERSISTENCE),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		200.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_NOISE_PERSISTENCE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_NOISE_LACUNARITY),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		0.01f,
+		50.0f,
+		PF_Precision_HUNDREDTHS,
+		PF_ValueDisplayFlag_NONE,
+		0,
+		DISK_ID(KIRI_SPLAT_NOISE_LACUNARITY)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_END_TOPIC(DISK_ID(KIRI_SPLAT_NOISE_TOPIC_END));
+
+
+	return err;
+}
+
+PF_Err SetupSplatOpacityUI(PF_InData* in_data, PF_OutData* out_data) {
+	PF_Err		err = PF_Err_NONE;
+	PF_ParamDef	def;
+	
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_TOPICX(
+		STR(STRID_SPLAT_OPACITY_TOPIC),
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_SPLAT_OPACITY_TOPIC_BEGIN)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_CHECKBOXX(
+		STR(STRID_SPLAT_OPACITY_ENABLE),
+		0,
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_SPLAT_OPACITY_ENABLE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_MIN_OPACITY),
+		0.0f,
+		100.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		0.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_MIN_OPACITY)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_MAX_OPACITY),
+		0.0f,
+		100.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_MAX_OPACITY)
+	);
+
+	ERR(SetupBezierUI(in_data , DISK_ID(KIRI_SPLAT_OPACITY_RAMP) ,STRID_SPLAT_OPACITY_RAMP , out_data));
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_OPACITY_SHAPE_SIZE),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_OPACITY_SHAPE_SIZE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_OPACITY_SHAPE_SCALE_X),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_OPACITY_SHAPE_SCALE_X)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_OPACITY_SHAPE_SCALE_Y),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_OPACITY_SHAPE_SCALE_Y)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_OPACITY_SHAPE_SCALE_Z),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_OPACITY_SHAPE_SCALE_Z)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_POINT_3D(
+		STR(STRID_SPLAT_OPACITY_SHAPE_CENTER),
+		0, 0, 0,
+		DISK_ID(KIRI_SPLAT_OPACITY_SHAPE_CENTER)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_OPACITY_SHAPE_FEATHER),
+		0.0f,
+		100.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		50.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_OPACITY_SHAPE_FEATHER)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_END_TOPIC(DISK_ID(KIRI_SPLAT_OPACITY_TOPIC_END));
+	
+	return err;
+}
+
+PF_Err SetupSplatDisplacementUI(PF_InData* in_data, PF_OutData* out_data) {
+	PF_Err		err = PF_Err_NONE;
+	PF_ParamDef	def;
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_TOPICX(
+		STR(STRID_SPLAT_DISPLACEMENT_TOPIC),
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_SPLAT_DISPLACEMENT_TOPIC_BEGIN)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_CHECKBOXX(
+		STR(STRID_SPLAT_DISPLACEMENT_ENABLE),
+		0,
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_SPLAT_DISPLACEMENT_ENABLE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_POINT_3D(
+		STR(STRID_SPLAT_DISPLACEMENT_OFFSET),
+		0, 0, 0,
+		DISK_ID(KIRI_SPLAT_DISPLACEMENT_OFFSET)
+	);
+
+	ERR(SetupBezierUI(in_data, DISK_ID(KIRI_SPLAT_DISPLACEMENT_OFFSET_RAMP), STRID_SPLAT_DISPLACEMENT_OFFSET_RAMP, out_data));
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_DISPLACEMENT_SCALE),
+		-10000.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_NONE,
+		0,
+		DISK_ID(KIRI_SPLAT_DISPLACEMENT_SCALE)
+	);
+
+	ERR(SetupBezierUI(in_data, DISK_ID(KIRI_SPLAT_DISPLACEMENT_SCALE_RAMP), STRID_SPLAT_DISPLACEMENT_SCALE_RAMP, out_data));
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_ANGLE(
+		STR(STRID_SPLAT_DISPLACEMENT_ROTATION_X),
+		0,
+		DISK_ID(KIRI_SPLAT_DISPLACEMENT_ROTATION_X)
+	);
+
+	
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_ANGLE(
+		STR(STRID_SPLAT_DISPLACEMENT_ROTATION_Y),
+		0,
+		DISK_ID(KIRI_SPLAT_DISPLACEMENT_ROTATION_Y)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_ANGLE(
+		STR(STRID_SPLAT_DISPLACEMENT_ROTATION_Z),
+		0,
+		DISK_ID(KIRI_SPLAT_DISPLACEMENT_ROTATION_Z)
+	);
+
+	ERR(SetupBezierUI(in_data, DISK_ID(KIRI_SPLAT_DISPLACEMENT_ROTATION_RAMP), STRID_SPLAT_DISPLACEMENT_ROTATION_RAMP, out_data));
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_DISPLACEMENT_SHAPE_SIZE),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_DISPLACEMENT_SHAPE_SIZE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_DISPLACEMENT_SHAPE_SCALE_X),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_DISPLACEMENT_SHAPE_SCALE_X)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_DISPLACEMENT_SHAPE_SCALE_Y),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_DISPLACEMENT_SHAPE_SCALE_Y)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_DISPLACEMENT_SHAPE_SCALE_Z),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_DISPLACEMENT_SHAPE_SCALE_Z)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_POINT_3D(
+		STR(STRID_SPLAT_DISPLACEMENT_SHAPE_CENTER),
+		0, 0, 0,
+		DISK_ID(KIRI_SPLAT_DISPLACEMENT_SHAPE_CENTER)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	def.ui_flags = PF_PUI_INVISIBLE;
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_DISPLACEMENT_SHAPE_FEATHER),
+		0.0f,
+		100.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		50.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_DISPLACEMENT_SHAPE_FEATHER)
+	);
+
+
+	AEFX_CLR_STRUCT(def);
+	PF_END_TOPIC(DISK_ID(KIRI_SPLAT_DISPLACEMENT_TOPIC_END));
+
+	return err;
+}
+
+
+
+PF_Err static SetupDofUI(PF_InData* in_data, PF_OutData* out_data) {
+	PF_Err		err = PF_Err_NONE;
+	PF_ParamDef	def;
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_TOPICX(
+		STR(STRID_KIRI_ADVANCED_DOF_TOPIC),
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_ADVANCED_DOF_TOPIC_BEGIN)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_CHECKBOXX(
+		STR(STRID_KIRI_ADVANCED_DOF_ENABLE),
+		0,
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_ADVANCED_DOF_ENABLE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_KIRI_ADVANCED_DOF_FOCUS_DISTANCE),
+		0.0f,
+		100000.0f,
+		0.0f,
+		1500.0f,
+		1.0f,
+		0.1f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_NONE,
+		0,
+		DISK_ID(KIRI_ADVANCED_DOF_FOCUS_DISTANCE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_KIRI_ADVANCED_DOF_APERTURE),
+		0.0f,
+		32.0f,
+		0.0f,
+		32.0f,
+		1.0f,
+		10.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_NONE,
+		0,
+		DISK_ID(KIRI_ADVANCED_DOF_APERTURE)
+	);
+
+	AEFX_CLR_STRUCT(def); 
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_KIRI_ADVANCED_DOF_BLUR_LEVEL),
+		0.0f,
+		100.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		50.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_ADVANCED_DOF_BLUR_LEVEL)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_END_TOPIC(DISK_ID(KIRI_ADVANCED_DOF_TOPIC_END));
+
+	return err;
+}
+
+PF_Err SetupAdvancedUI(PF_InData* in_data, PF_OutData* out_data) {
+	PF_Err		err = PF_Err_NONE;
+	PF_ParamDef	def;
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_TOPICX(
+		STR(STRID_ADVANCED_TOPIC),
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_ADVANCED_TOPIC_BEGIN)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_ADVANCED_CAMERA_FOCAL_LENGTH),
+		0.0f,
+		100000.0f,
+		0.0f,
+		1500.0f,
+		1.0f,
+		1500.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_NONE,
+		0,
+		DISK_ID(KIRI_ADVANCED_CAMERA_FOCAL_LENGTH)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_ADVANCED_SPLAT_CROP_NEAR),
+		0.0f,
+		100000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		0.1f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_NONE,
+		0,
+		DISK_ID(KIRI_ADVANCED_SPLAT_CROP_NEAR)
+	);
+
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_ADVANCED_SPLAT_CROP_FAR),
+		0.0f,
+		10000000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		10000000.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_NONE,
+		0,
+		DISK_ID(KIRI_ADVANCED_SPLAT_CROP_FAR)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_ADVANCED_SPLAT_CROP_MAX_SCALE),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_NONE,
+		0,
+		DISK_ID(KIRI_ADVANCED_SPLAT_CROP_MAX_SCALE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_ADVANCED_SPLAT_CROP_MIN_SCALE),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_NONE,
+		0,
+		DISK_ID(KIRI_ADVANCED_SPLAT_CROP_MIN_SCALE)
+	);
+
+	SetupDofUI(in_data, out_data);
+
+	AEFX_CLR_STRUCT(def);
+	PF_END_TOPIC(DISK_ID(KIRI_ADVANCED_TOPIC_END));
+
+	return err;
+}
+
+PF_Err SetupAlignUI(PF_InData* in_data, PF_OutData* out_data) {
+	PF_Err		err = PF_Err_NONE;
+	PF_ParamDef	def;
+	
+
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_TOPICX(
+		STR(STRID_ALIGN_TOPIC),
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_ALIGN_TOPIC_BEGIN)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_POINT_3D(
+		STR(STRID_ALIGN_ANCHOR_POSITION),
+		0, 0, 0,
+		DISK_ID(KIRI_ALIGN_ANCHOR_POSITION)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_ALIGN_SCALE),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_ALIGN_SCALE)
+	);
+
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_ANGLE(
+		STR(STRID_ALIGN_ROTATION_X),
+		0,
+		DISK_ID(KIRI_ALIGN_ROTATION_X)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_ANGLE(
+		STR(STRID_ALIGN_ROTATION_Y),
+		0,
+		DISK_ID(KIRI_ALIGN_ROTATION_Y)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_ANGLE(
+		STR(STRID_ALIGN_ROTATION_Z),
+		0,
+		DISK_ID(KIRI_ALIGN_ROTATION_Z)
+	);
+
+
+	AEFX_CLR_STRUCT(def);
+	PF_END_TOPIC(DISK_ID(KIRI_ALIGN_TOPIC_END));
+
+	return err;
+}
+
+PF_Err SetupEffectUI(PF_InData* in_data, PF_OutData* out_data) {
+
+	PF_Err		err = PF_Err_NONE;
+	PF_ParamDef	def;
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_TOPICX(
+		STR(STRID_EFFECT_TOPIC),
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_EFFECT_TOPIC_BEGIN)
+	);
+
+	ERR(SetupRenderUI(in_data, out_data));
+	ERR(SetupCropUI(in_data, out_data));
+	ERR(SetupSplatScaleUI(in_data, out_data));
+	ERR(SetupSplatNoiseUI(in_data, out_data));
+	ERR(SetupSplatOpacityUI(in_data, out_data));
+	ERR(SetupSplatDisplacementUI(in_data, out_data));
+	ERR(SetupSplatDenseUI(in_data, out_data));
+
+	PF_END_TOPIC(DISK_ID(KIRI_EFFECT_TOPIC_END));
+}
+
+
+PF_Err SetupSplatDenseUI(PF_InData* in_data, PF_OutData* out_data) {
+
+	PF_Err		err = PF_Err_NONE;
+	PF_ParamDef	def;
+	
+	AEFX_CLR_STRUCT(def);
+
+	PF_ADD_TOPICX(
+		STR(STRID_SPLAT_DENSE_TOPIC),
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_SPLAT_DENSE_TOPIC_BEGIN)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_CHECKBOXX(
+		STR(STRID_SPLAT_DENSE_ENABLE),
+		0,
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_SPLAT_DENSE_ENABLE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_DENSE_DENSITY),
+		0.0f,
+		100.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_DENSE_DENSITY)
+	);
+
+	SetupBezierUI(in_data, DISK_ID(KIRI_SPLAT_DENSE_SHAPE_RAMP), STRID_SPLAT_DENSE_DENSITY_RAMP , out_data);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_DENSE_SHAPE_SIZE),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_DENSE_SHAPE_SIZE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_DENSE_SHAPE_SCALE_X),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_DENSE_SHAPE_SCALE_X)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_DENSE_SHAPE_SCALE_Y),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_DENSE_SHAPE_SCALE_Y)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_DENSE_SHAPE_SCALE_Z),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_DENSE_SHAPE_SCALE_Z)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_POINT_3D(
+		STR(STRID_SPLAT_DENSE_SHAPE_CENTER),
+		0, 0, 0,
+		DISK_ID(KIRI_SPLAT_DENSE_SHAPE_CENTER)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_SPLAT_DENSE_SHAPE_FEATHER),
+		0.0f,
+		100.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		50.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_SPLAT_DENSE_SHAPE_FEATHER)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_END_TOPIC(DISK_ID(KIRI_SPLAT_DENSE_TOPIC_END));
+	
+	return err;
+}
+
+
+PF_Err InitUISeqData(PF_InData* in_data, PF_OutData* out_data) {
+	PF_Err err = PF_Err_NONE;
+
+
+	auto seqH = PF_NEW_HANDLE(sizeof(UISequenceData));
+	if (!seqH) {
+		return PF_Err_OUT_OF_MEMORY;
+	}
+
+	auto* seq = reinterpret_cast<UISequenceData*>(PF_LOCK_HANDLE(seqH));
+
+	if (seq) {
+		seq->isInitialized = FALSE;
+	}
+
+	out_data->sequence_data = seqH;
+
+	PF_UNLOCK_HANDLE(seqH);
+
+	return err;
+}
+
+PF_Err InitUIWhileFirstLoad(PF_InData* in_data, PF_OutData* out_data) {
+	PF_Err err = PF_Err_NONE;
+
+	auto seqH = in_data->sequence_data;
+	auto* seq = reinterpret_cast<UISequenceData*>(PF_LOCK_HANDLE(seqH));
+	bool isInitialized = true;
+	if (seq) {
+		isInitialized = seq->isInitialized;
+		
+		if (isInitialized == FALSE) {
+			seq->isInitialized = TRUE;
+			out_data->sequence_data = seqH;
+		}
+		else {
+			return err;
+		}
+	}
+	else {
+		return PF_Err_OUT_OF_MEMORY;
+	}
+
+	PF_UNLOCK_HANDLE(seqH);
+	
+	// shit code here
+	// init KIRI_TRANSFORM_POSITION / KIRI_TRANSFORM_ROTATION_X
+	if (isInitialized == FALSE) {
+		AEGP_StreamValue2 val = {};
+		AEGP_EffectRefH  effectPH = nullptr;
+		AEGP_StreamRefH  streamH = nullptr;
+		AEFX_CLR_STRUCT(val);
+	
+		AEGP_SuiteHandler	suites(in_data->pica_basicP);
+		ERR(suites.PFInterfaceSuite1()->AEGP_GetNewEffectForEffect(
+			g_pluginID,
+			in_data->effect_ref,
+			&effectPH
+		));
+	
+		if (effectPH == nullptr) {
+			return PF_Err_OUT_OF_MEMORY;
+		}
+	
+		ERR(suites.StreamSuite6()->AEGP_GetNewEffectStreamByIndex(
+			g_pluginID,
+			effectPH,
+			KIRI_TRANSFORM_POSITION,
+			&streamH 
+		));
+	
+		if (streamH == nullptr) {
+			return PF_Err_OUT_OF_MEMORY;
+		}
+	
+		val.streamH = streamH;
+		val.val.three_d.x = static_cast<A_FpLong>(in_data->width) / 2.0;
+		val.val.three_d.y = static_cast<A_FpLong>(in_data->height) / 2.0;
+		val.val.three_d.z = 0.0;
+	
+		ERR(suites.StreamSuite6()->AEGP_SetStreamValue(
+			g_pluginID,
+			streamH,
+			&val
+		));
+	
+		if (streamH == nullptr) {
+			return PF_Err_OUT_OF_MEMORY;
+		}
+		
+	
+		return err;
+	}
+		
+}
+
+
+	

@@ -1,0 +1,7 @@
+#define MAX_COLOR_GRADIENT_COUNT 20
+#define MAX_BEZIER_POINT_COUNT 20
+#define THOUSANDTH 0.001 
+#define PERCENT 0.01
+#define TENTH 0.1
+
+
