@@ -35,7 +35,7 @@ The release package may include:
 
 ### Windows
 
-Copy the plugin files into the After Effects Plug-ins folder.
+Copy the .aex plugin files into the After Effects Plug-ins folder.
 
 The default location is usually:
 
@@ -48,7 +48,7 @@ After copying the plugin files, restart After Effects.
 
 ### macOS
 
-Copy the plugin files into the After Effects Plug-ins folder.
+Copy the .plugin plugin files into the After Effects Plug-ins folder.
 
 The default location is usually:
 
