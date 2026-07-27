@@ -25,11 +25,6 @@ Download the latest available plugin build from the **Releases** section of this
 
 https://github.com/Kiri-Innovation/Gaussian-Splatting-plugin-by-KIRI-Engine/releases
 
-The release package may include:
-
-**- `UPDATE WHEN READY UPDATE WHEN READY UPDATE WHEN READY UPDATE WHEN READY`
-- `UPDATE WHEN READY UPDATE WHEN READY UPDATE WHEN READY UPDATE WHEN READY`
-**
 
 ## Installation
 
