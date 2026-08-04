@@ -1457,6 +1457,11 @@ PF_Err InitUIWhileFirstLoad(PF_InData* in_data, PF_OutData* out_data) {
 			&val
 		));
 	
+
+		suites.StreamSuite5()->AEGP_DisposeStreamValue(&val);
+		suites.StreamSuite2()->AEGP_DisposeStream(streamH);
+
+
 		if (streamH == nullptr) {
 			return PF_Err_OUT_OF_MEMORY;
 		}
