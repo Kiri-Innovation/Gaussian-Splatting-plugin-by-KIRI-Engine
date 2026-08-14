@@ -1,9 +1,8 @@
 #include "version.glsl"
 #include "uniforms.glsl"
 
-layout(location = 0) out vec4 outFinalColor;
-layout(location = 1) out vec4 outColor;
-layout(location = 2) out vec4 outDepth;
+layout(location = 0) out vec4 outColor;
+layout(location = 1) out vec4 outDepth;
 
 in vec4 color ;
 // [-near , -far]

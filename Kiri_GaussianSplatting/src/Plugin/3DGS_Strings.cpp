@@ -199,19 +199,31 @@ TableString g_strs[STRID_NUMTYPES] = {
 	{ STRID_SPLAT_DENSE_SHAPE_FEATHER,  { "Dense Shape Center" , "羽化" } },
 
 	// ================= Advanced =================
-	{ STRID_ADVANCED_TOPIC,             { "Advanced", "高级" } },
-	{ STRID_ADVANCED_CAMERA_FOCAL_LENGTH,{ "Camera Focal Length", "焦距" } },
-	{ STRID_ADVANCED_SPLAT_CROP_NEAR,   { "Near Crop", "近裁剪" } },
-	{ STRID_ADVANCED_SPLAT_CROP_FAR,    { "Far Crop", "远裁剪" } },
+	{ STRID_ADVANCED_TOPIC,               { "Advanced", "高级" } },
+	{ STRID_ADVANCED_CAMERA_FOCAL_LENGTH, { "Camera Focal Length", "焦距" } },
+	{ STRID_ADVANCED_SPLAT_CROP_NEAR,     { "Near Crop", "近裁剪" } },
+	{ STRID_ADVANCED_SPLAT_CROP_FAR,      { "Far Crop", "远裁剪" } },
 	{ STRID_ADVANCED_SPLAT_CROP_MAX_SCALE,{ "Max Scale", "最大缩放" } },
 	{ STRID_ADVANCED_SPLAT_CROP_MIN_SCALE,{ "Min Scale", "最小缩放" } },
 
 	// ================= DOF =================
-	{ STRID_KIRI_ADVANCED_DOF_TOPIC,    { "Depth of Field", "景深" } },
-	{ STRID_KIRI_ADVANCED_DOF_ENABLE,   { "Enable", "启用" } },
+	{ STRID_KIRI_ADVANCED_DOF_TOPIC,		 { "Depth of Field", "景深" } },
+	{ STRID_KIRI_ADVANCED_DOF_ENABLE,		 { "Enable", "启用" } },
 	{ STRID_KIRI_ADVANCED_DOF_FOCUS_DISTANCE,{ "Focus Distance", "对焦距离" } },
-	{ STRID_KIRI_ADVANCED_DOF_APERTURE, { "Aperture", "光圈" } },
-	{ STRID_KIRI_ADVANCED_DOF_BLUR_LEVEL,{ "Blur", "模糊" } },
+	{ STRID_KIRI_ADVANCED_DOF_APERTURE,		 { "Aperture", "光圈" } },
+	{ STRID_KIRI_ADVANCED_DOF_BLUR_LEVEL,	 { "Blur", "模糊" } },
+
+	// ================ GLOW =================
+
+	{  STRID_KIRI_ADVANCED_GLOW_TOPIC,		{ "Glow", "辉光" } },
+	{  STRID_KIRI_ADVANCED_GLOW_ENABLE,		{ "Enable", "启用" } },
+	{  STRID_KIRI_ADVANCED_GLOW_BLEND_MODE,	{ "Blend Mode", "混合模式" } },
+	{  STRID_KIRI_ADVANCED_GLOW_RADIUS,		{ "Radius", "半径" } },
+	{  STRID_KIRI_ADVANCED_GLOW_THRESHOLD,	{ "Threshold", "阈值" } },
+	{  STRID_KIRI_ADVANCED_GLOW_SMOOTH,		{ "Smooth", "平滑" } }
+
+	// ================ GLOW =================
+
 };
 
 static_assert((sizeof(g_strs) / sizeof(g_strs[0])) == STRID_NUMTYPES, "Missing string table entries");

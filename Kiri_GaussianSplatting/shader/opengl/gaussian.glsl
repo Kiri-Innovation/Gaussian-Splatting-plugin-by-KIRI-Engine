@@ -120,7 +120,7 @@ void GetSplatElement(int instanceID){
   
 }
 
-vec4 ComputeSplatProject(vec4 splat_cam)
+vec4 ComputeSplatProject(vec4 splat_cam, float sizeFactor)
 {
     
     vec4 splat_proj = u_renderInfo.projectionMatrix * splat_cam;
@@ -170,7 +170,7 @@ vec4 ComputeSplatProject(vec4 splat_cam)
     vec2 v2 = min(sqrt(2.0 * lambda2), 1024.0) * vec2(diagonalVector.y, -diagonalVector.x);
 
 
-    // early out tiny splats
+     // early out tiny splats
      //TODO: figure out length units and expose as uniform parameter
      //TODO: perhaps make this a shader compile-time option
      //if (dot(v1, v1) < 4.0 && dot(v2, v2) < 4.0) {
@@ -178,8 +178,24 @@ vec4 ComputeSplatProject(vec4 splat_cam)
      //}
 
     texCoord = aPos.xy * 4.0;
+    
+    
+    float r1 = length(v1);
+    float r2 = length(v2);
 
-    splat_proj.xy += (texCoord.x * v1 + texCoord.y * v2) / u_renderInfo.viewport * splat_proj.w;
+    float minR1 = 3.0 * step(0.000001, sizeFactor);
+    float minR2 = 3.0 * step(0.000001, sizeFactor);
+
+    float finalR1 = mix(minR1, r1, sizeFactor);
+    float finalR2 = mix(minR2, r2, sizeFactor);
+
+    v1 = normalize(v1) * finalR1;
+    v2 = normalize(v2) * finalR2;
+    
+    vec2 screenOffset = (texCoord.x * v1 + texCoord.y * v2) / u_renderInfo.viewport * splat_proj.w;
+    
+    
+    splat_proj.xy += screenOffset;
 
     return splat_proj;
 }

@@ -100,6 +100,11 @@ typedef struct  GaussianRenderInfo {
 	float advancedDofAperture;
 	float advancedDofBlurLevel;
 
+	float advancedGlowEnable;
+	float advancedGlowBlendMode;
+	float advancedGlowRadius;
+	float advancedGlowThreshold;
+	float advancedGlowSmooth;
 	// do not change the above member order for std 140 layout
 
 	int splatCount;
@@ -227,11 +232,16 @@ typedef struct AEStreamValueInfo {
 	float advancedSplatCropMaxScale;
 	float advancedSplatCropMinScale;
 
-
 	float advancedDofEnable;
 	float advancedDofFocusDistance;
 	float advancedDofAperture;
 	float advancedDofBlurLevel;
+
+	float advancedGlowEnable;
+	float advancedGlowBlendMode;
+	float advancedGlowRadius;
+	float advancedGlowThreshold;
+	float advancedGlowSmooth;
 
 	float pad_end;
 	// do not change the above member order for std 140 layout

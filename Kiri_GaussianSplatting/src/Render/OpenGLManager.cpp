@@ -21,48 +21,26 @@ OpenGLManager::OpenGLManager() {
 
 OpenGLManager::~OpenGLManager() {
     //BindContext();
-
-    std::list<std::pair<int, TextureBufferInfo>> textureBufferList(
-        textureBuffers.begin(),
-        textureBuffers.end()
-    );
-    for (auto& [uid, info] : textureBufferList) {
+    for (auto& [uid, info] : textureBuffers) {
         DeleteTextureBuffer(info);
     }
-    std::list<std::pair<int, SplatMeshInfo>>  splatMeshList(
-        splatMeshes.begin(),
-        splatMeshes.end()
-    );
-    for (auto& [uid, info] : splatMeshList) {
-        DeleteSplatMesh (info);
+    for (auto& [uid, info] : splatMeshes) {
+        DeleteSplatMesh(info);
     }
-    std::list<std::pair<int, ShaderProgramInfo>>  shaderProgramList(
-        shaderPrograms.begin(),
-        shaderPrograms.end()
-    );
-    for (auto& [uid, info] : shaderProgramList) {
+    for (auto& [uid, info] : shaderPrograms) {
         DeleteShaderProgram(info);
     }
-    std::list<std::pair<int, RenderTargetInfo>>  renderTargetList(
-        renderTargets.begin(),
-        renderTargets.end()
-    );
-    for (auto& [uid, info] : renderTargetList) {
+    for (auto& [uid, info] : renderTargets) {
         DeleteRenderTarget(info);
     }
-    std::list<std::pair<int, SSBOInfo>>  SSBOList(
-        SSBOs.begin(),
-        SSBOs.end()
-    );
-    for (auto& [uid, info] : SSBOList) {
+    for (auto& [uid, info] : SSBOs) {
         DeleteSSBO(info);
     }
-    std::list<std::pair<int, UBOInfo>>  UBOList(
-        UBOs.begin(),
-        UBOs.end()
-    );
-    for (auto& [uid, info] : UBOList) {
+    for (auto& [uid, info] : UBOs) {
         DeleteUBO(info);
+    }
+    for (auto& [uid, info] : glowRenderTargets) {
+        DeleteGlowRenderTargetInfo(info);
     }
     
 #if defined(__APPLE__)
@@ -366,32 +344,32 @@ SplatMeshInfo OpenGLManager::CreateSplatMesh() {
     return info;
 }
 
-RenderTargetInfo OpenGLManager::CreateRenderTarget(int width, int height) {
+RenderTargetInfo OpenGLManager::CreateRenderTarget(int width, int height ) {
     RenderTargetInfo info;
     info.uniqueID = uniqueID++;
 
     glGenFramebuffers(1, &info.FBO);
     glBindFramebuffer(GL_FRAMEBUFFER, info.FBO);
 
-    // final output
-    glGenTextures(1, &info.finalOutputTexture);
-    glBindTexture(GL_TEXTURE_2D, info.finalOutputTexture);
+    // ping-pong textur A 
+    glGenTextures(1, &info.colorTextureA);
+    glBindTexture(GL_TEXTURE_2D, info.colorTextureA);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, info.finalOutputTexture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, info.colorTextureA, 0);
 
-    // raw color
-    glGenTextures(1, &info.colorTexture);
-    glBindTexture(GL_TEXTURE_2D, info.colorTexture);
+    // ping-pong textur B
+    glGenTextures(1, &info.colorTextureB);
+    glBindTexture(GL_TEXTURE_2D, info.colorTextureB);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, info.colorTexture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, info.colorTextureB, 0);
 
     // depth buffer 
     glGenTextures(1, &info.depthTexture);
@@ -422,14 +400,15 @@ RenderTargetInfo OpenGLManager::CreateRenderTarget(int width, int height) {
         std::ostringstream oss;
         oss << "ERROR::FRAMEBUFFER:: frame buffer is not completed! Status: " << fboStatus
             << " (FBO_ID="   << info.FBO
-            << ", ColorTex=" << info.colorTexture
+            << ", ColorTex=" << info.GetCurrentColorTexture()
             << ", DepthTex=" << info.depthTexture
             << ", DepthRBO=" << info.depthRBO << ")";
         PLOGI << oss.str();
 
         // 优雅断后：失败时及时清理防止显存泄漏
         glDeleteFramebuffers(1, &info.FBO);
-        glDeleteTextures(1, &info.colorTexture);
+        glDeleteTextures(1, &info.colorTextureA);
+        glDeleteTextures(1, &info.colorTextureB);
         glDeleteTextures(1, &info.depthTexture);
         glDeleteRenderbuffers(1, &info.depthRBO);
         return RenderTargetInfo(); // 返回空结构
@@ -444,6 +423,75 @@ RenderTargetInfo OpenGLManager::CreateRenderTarget(int width, int height) {
     renderTargets.insert(std::pair<int, RenderTargetInfo>(info.uniqueID, info));
 
     return info;
+}
+
+
+GlowRenderTargetInfo OpenGLManager::CreateGlowRenderTarget(int width, int height) {
+    GlowRenderTargetInfo info;
+    info.uniqueID = uniqueID++;
+
+    glGenFramebuffers(1, &info.FBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, info.FBO);
+
+    // glowBrightTexure
+    glGenTextures(1, &info.glowBrightTexure);
+    glBindTexture(GL_TEXTURE_2D, info.glowBrightTexure);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, info.glowBrightTexure, 0);
+
+    // mipmap
+    for (int i = 0; i < GLOW_MIPMAP_LEVEL_COUNT; i++) {
+        int mipWidth = width >> i;
+        int mipHeight = height >> i ;
+        // mipmap
+        glGenTextures(1, &info.mipmapTexture[i]);
+        glBindTexture(GL_TEXTURE_2D, info.mipmapTexture[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mipWidth, mipHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        // blur temp texture
+        glGenTextures(1, &info.blurTempTexture[i]);
+        glBindTexture(GL_TEXTURE_2D, info.blurTempTexture[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mipWidth, mipHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        //glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i + 1, GL_TEXTURE_2D, info.mipmapTexture[i], 0);
+    }
+
+
+    // 6. 验证 FBO 完整性
+    GLenum fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (fboStatus != GL_FRAMEBUFFER_COMPLETE) {
+        std::ostringstream oss;
+        oss << "ERROR::FRAMEBUFFER:: frame buffer is not completed!";
+        PLOGI << oss.str();
+
+        glDeleteFramebuffers(1, &info.FBO);
+        glDeleteTextures(1, &info.glowBrightTexure);
+        for (int i = 0; i < GLOW_MIPMAP_LEVEL_COUNT; i++) {
+        }
+        return GlowRenderTargetInfo(); // 返回空结构
+    }
+
+    // 7. 解绑状态机，保持上下文干净
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    // 8. 存入管理容器
+    glowRenderTargets.insert(std::pair<int, GlowRenderTargetInfo>(info.uniqueID, info));
+
+    return info;
+
 }
 
 GLuint OpenGLManager::CompileShader(GLenum type, const char* source) {
@@ -523,117 +571,18 @@ ShaderProgramInfo OpenGLManager::CreateShaderProgram(ShaderProgramType type) {
         oss << "ERROR::PROGRAM_LINKING_ERROR\n" << infoLog << std::endl;
         PLOGI <<oss.str();
     }
-    
-    /*
-    const char* names[] = {
-        "u_renderInfo.modelMatrix",
-        "u_renderInfo.viewMatrix",
-        "u_renderInfo.projectionMatrix",
-        "u_renderInfo.viewport",
-        "u_renderInfo.focalPixelX",
-        "u_renderInfo.instanceCount",
-        "u_renderInfo.cameraPos",
-        "u_renderInfo.colorShapeCenter",
-
-        "u_renderInfo.shDegree",
-        "u_renderInfo.colorEnable",
-        "u_renderInfo.colorShapeSize",
-
-        "u_renderInfo.cropEnable",
-        "u_renderInfo.cropShapeCenter",
-        "u_renderInfo.cropInvert",
-        "u_renderInfo.cropShapeSize",
-
-        "u_renderInfo.splatScaleEnable",
-        "u_renderInfo.splatScaleSize",
-
-        "u_renderInfo.splatNoiseShapeCenter",
-        "u_renderInfo.splatNoiseEnable",
-        "u_renderInfo.splatNoiseShapeSize",
-        "u_renderInfo.splatNoiseOctaves",
-        "u_renderInfo.splatNoisePersistence",
-        "u_renderInfo.splatNoiseLacunarity",
-        "u_renderInfo.splatNoiseStrength",
-
-        "u_renderInfo.splatOpacityEnable",
-        "u_renderInfo.splatOpacityShapeSize",
-        "u_renderInfo.splatOpacityShapeCenter",
-        "u_renderInfo.splatOpacity",
-
-        //"u_colorGradient.currentCursorCount",
-        //"u_colorGradient.colorGradientCursor[0].lerpFactor",
-        //"u_colorGradient.colorGradientCursor[0].R",
-        //"u_colorGradient.colorGradientCursor[0].G",
-        //"u_colorGradient.colorGradientCursor[0].B",
-        //
-        //"u_colorGradient.colorGradientCursor[1].lerpFactor",
-        //"u_colorGradient.colorGradientCursor[1].R",
-        //"u_colorGradient.colorGradientCursor[1].G",
-        //"u_colorGradient.colorGradientCursor[1].B",
-
-        "u_colorRamp.currentPointCount",
-        "u_colorRamp.bezierPointInfo[0].x",
-        "u_colorRamp.bezierPointInfo[0].y",
-
-        "u_splatScaleRamp.currentPointCount",
-        "u_splatScaleRamp.bezierPointInfo[0].x",
-        "u_splatScaleRamp.bezierPointInfo[0].y",
-    };
-
-    constexpr GLsizei count = sizeof(names) / sizeof(names[0]);
-
-    std::ostringstream oss;
-    for (int i = 0; i < count; ++i) {
-        LogRenderInfoUniformIndex(info.program, names[i]);
-    }
-    GetGLError();
-    */
 
     shaderPrograms.insert(std::pair<int, ShaderProgramInfo>(info.uniqueID, info));
     return info;
 }
-/*
-ShaderProgramInfo OpenGLManager::CreateComputeProgram() {
-  
-#if defined(_WIN32)
-    ShaderProgramInfo info;
-    info.uniqueID = uniqueID++;
 
-    std::string computeShaderSrc = GetComputeShader();
-    GLuint  computeShader = CompileShader(GL_COMPUTE_SHADER, computeShaderSrc.data());
-
-    info.program = glCreateProgram();
-    glAttachShader(info.program, computeShader);
-
-    glLinkProgram(info.program);
-
-    int success;
-    glGetProgramiv(info.program, GL_LINK_STATUS, &success);
-    if (!success) {
-        char infoLog[512];
-        glGetProgramInfoLog(info.program, 512, nullptr, infoLog);
-        std::ostringstream oss;
-        oss << "ERROR::PROGRAM_LINKING_ERROR\n" << infoLog << std::endl;
-        PLOGI << oss.str();
-    }
-
-    glDeleteShader(computeShader);
-
-
-    shaderPrograms.insert(std::pair<int, ShaderProgramInfo>(info.uniqueID, info));
-
-    return info;
-#endif
-
-}
-*/
 
 void OpenGLManager::DeleteRenderTarget(RenderTargetInfo& info) {
     auto it = renderTargets.find(info.uniqueID);
     if (it != renderTargets.end() ) {
         glDeleteFramebuffers(1, &info.FBO);
-        glDeleteTextures(1, &info.finalOutputTexture);
-        glDeleteTextures(1, &info.colorTexture);
+        glDeleteTextures(1, &info.colorTextureA);
+        glDeleteTextures(1, &info.colorTextureB);
         glDeleteTextures(1, &info.depthTexture);
         glDeleteRenderbuffers(1, &info.depthRBO);
 
@@ -675,6 +624,20 @@ void OpenGLManager::DeleteShaderProgram(ShaderProgramInfo& info){
     }
 }
 
+
+void OpenGLManager::DeleteGlowRenderTargetInfo(GlowRenderTargetInfo& info) {
+    auto it = glowRenderTargets.find(info.uniqueID);
+    if (it != glowRenderTargets.end()) {
+        glDeleteFramebuffers(1, &info.FBO);
+        glDeleteTextures(1, &info.glowBrightTexure);
+        for (int i = 0; i < GLOW_MIPMAP_LEVEL_COUNT; i++) {
+            glDeleteTextures(1, &info.mipmapTexture[i]);
+            glDeleteTextures(1, &info.blurTempTexture[i]);
+        }
+
+        glowRenderTargets.erase(it);
+    }
+}
 
 void OpenGLManager::DeleteSSBO(SSBOInfo& info) {
     auto it = SSBOs.find(info.uniqueID);
