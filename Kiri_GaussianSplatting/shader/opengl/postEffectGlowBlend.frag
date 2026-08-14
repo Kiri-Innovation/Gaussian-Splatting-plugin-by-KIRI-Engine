@@ -5,7 +5,7 @@ layout(location = 0) out vec4 outGlowBrightColor;
 in vec2 texCoord;
 
 uniform sampler2D u_RawColorTexture;
-uniform sampler2D u_GlowBrightTexture;;
+uniform sampler2D u_GlowBrightTexture;
 
 void main() {
     
