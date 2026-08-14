@@ -1,4 +1,4 @@
-#include "Render/GaussianRenderer.h"
+﻿#include "Render/GaussianRenderer.h"
 #include "Common/Utils.h"
 #include "stb_image_write.h"
 #include "Common/Global.h"
@@ -18,7 +18,12 @@ GaussianRenderer::GaussianRenderer() {
 
     computeShaderProgramInfo = g_openGLManager.CreateShaderProgram(ShaderProgramType::PointAnimate);
     shaderProgramInfo = g_openGLManager.CreateShaderProgram(ShaderProgramType::Main);
-    postEffectProgramInfo = g_openGLManager.CreateShaderProgram(ShaderProgramType::PostEffect);
+    postEffectProgramInfo = g_openGLManager.CreateShaderProgram(ShaderProgramType::PostEffectDof);
+    postEffectGlowBrightProgramInfo = g_openGLManager.CreateShaderProgram(ShaderProgramType::PostEffectGlowBright);
+    gaussianBlurVerticalProgramInfo = g_openGLManager.CreateShaderProgram(ShaderProgramType::GaussianBlurVertical);
+    gaussianBlurHorizontalProgramInfo = g_openGLManager.CreateShaderProgram(ShaderProgramType::GaussianBlurHorizontal);
+    postEffectGlowBrightUpsampleProgramInfo = g_openGLManager.CreateShaderProgram(ShaderProgramType::PostEffectGlowUpSample);
+    postEffectGlowBlendProgramInfo = g_openGLManager.CreateShaderProgram(ShaderProgramType::PostEffectGlowBlend);
 
     //computeShaderProgramInfo = g_openGLManager.CreateComputeProgram();
     splatMeshInfo     = g_openGLManager.CreateSplatMesh();
@@ -64,16 +69,12 @@ void GaussianRenderer::Render(GaussianModel& gaussianModel,
         width = renderInfo.viewport[0];
         height = renderInfo.viewport[1];
         renderTargetInfo = g_openGLManager.CreateRenderTarget(width, height);
+        glowRenderTargetInfo = g_openGLManager.CreateGlowRenderTarget(width, height);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, renderTargetInfo.FBO);
     
     glViewport(0, 0, width, height);
     glClearColor(0., 0., 0., 0.f);
-    //GLfloat clearColorBuffer[] = { 0.f, 0.0f, 0.0f, 0.0f };
-    //GLfloat clearDepthBuffer[] = { 1500.0f, 1500.0f, 1500.0f, 1.0f };
-    //glClearBufferfv(GL_COLOR, 0, clearColorBuffer);
-    //glClearBufferfv(GL_COLOR, 1, clearColorBuffer);
-    //glClearBufferfv(GL_COLOR, 2, clearDepthBuffer);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     if (gaussianModel.splatCount == 0 || shaderInput.splatEnable==0) {
@@ -101,7 +102,17 @@ void GaussianRenderer::Render(GaussianModel& gaussianModel,
     {
         glUseProgram(shaderProgramInfo.program);
 
+        
         glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+        // out
+        glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTargetInfo.GetCurrentColorTexture(), 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, renderTargetInfo.depthTexture, 0);
+
+        GLenum postPassBuffers[] = { GL_COLOR_ATTACHMENT0 , GL_COLOR_ATTACHMENT1 };
+        glDrawBuffers(std::size(postPassBuffers), postPassBuffers);
+
+        glClear(GL_COLOR_BUFFER_BIT);
+
         // =========== TBO ===========
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_BUFFER, gaussianModel.depthIndexTboInfo.TBOTexure);
@@ -124,20 +135,22 @@ void GaussianRenderer::Render(GaussianModel& gaussianModel,
     }
     auto afterGlFinishEnd = std::chrono::high_resolution_clock::now();
 
-    // 5. post effect pass
-    auto afterAEBegin = std::chrono::high_resolution_clock::now();
+    // 5. post effect :: dof
+    auto dofBegin = std::chrono::high_resolution_clock::now();
+    if (shaderInput.renderBlock.advancedDofEnable == 1.0)
     {
         glUseProgram(postEffectProgramInfo.program);
 
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, 0, 0);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, 0, 0);
-        
-        //glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTargetInfo.finalOutputTexture, 0);
+        // out 
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderTargetInfo.GetNextColorTexture(), 0);
         
         GLenum postPassBuffers[] = { GL_COLOR_ATTACHMENT0 };
         glDrawBuffers(std::size(postPassBuffers), postPassBuffers);
-        
-        glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, renderTargetInfo.colorTexture);
+
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // in 
+        glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, renderTargetInfo.GetCurrentColorTexture());
         glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, renderTargetInfo.depthTexture);
 
         //glUniform1i(glGetUniformLocation(postEffectProgramInfo.program, "u_RawColorTexture"), 0);
@@ -145,7 +158,7 @@ void GaussianRenderer::Render(GaussianModel& gaussianModel,
         
         glUniform1i(GetUniformLoc(postEffectProgramInfo, "u_RawColorTexture"), 0);
         glUniform1i(GetUniformLoc(postEffectProgramInfo, "u_DepthTexture"), 1);
-
+        // screen space render 
         glBindVertexArray(splatMeshInfo.VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
         glBindVertexArray(0);
@@ -153,16 +166,165 @@ void GaussianRenderer::Render(GaussianModel& gaussianModel,
         glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, 0);
         glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, 0);
 
-        GLenum originAttachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-        glDrawBuffers(std::size(originAttachments), originAttachments);
+        //GLenum originAttachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+        //glDrawBuffers(std::size(originAttachments), originAttachments);
 
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, renderTargetInfo.colorTexture, 0);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, renderTargetInfo.depthTexture, 0);
+        //glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, renderTargetInfo.colorTexture, 0);
+        //glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, renderTargetInfo.depthTexture, 0);
         
-        
+        renderTargetInfo.SwapColorTexture();
+
         g_openGLManager.GetGLError();
     }
-    auto afterAEEnd = std::chrono::high_resolution_clock::now();
+    auto dofEnd = std::chrono::high_resolution_clock::now();
+
+    // 5. post effect :: glow
+    auto glowBegin = std::chrono::high_resolution_clock::now();
+    //if (shaderInput.renderBlock.advancedGlowEnable == 1.0)
+    if (shaderInput.renderBlock.advancedGlowEnable == 1.0)
+    {
+        PLOGD << "RENDER GLOW";
+        GLboolean blendWasEnabled = glIsEnabled(GL_BLEND);
+        glDisable(GL_BLEND);
+        // 5.1 bright pass
+        {
+            PLOGD << "RENDER GLOW BRIGHT PASS";
+            glUseProgram(postEffectGlowBrightProgramInfo.program);
+            glBindFramebuffer(GL_FRAMEBUFFER, glowRenderTargetInfo.FBO);
+
+            //glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, renderTargetInfo.colorTexture);
+            // out
+            glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glowRenderTargetInfo.glowBrightTexure,0);
+            glClearColor(0.0f,0.0f,0.0f,0.0f);
+
+            // in 
+            glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, renderTargetInfo.GetCurrentColorTexture());
+            glUniform1i(GetUniformLoc(postEffectGlowBrightProgramInfo, "u_RawColorTexture"), 0);
+
+            // screen space render 
+            glBindVertexArray(splatMeshInfo.VAO);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glBindVertexArray(0);
+        
+
+            //glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, 0);
+
+            g_openGLManager.GetGLError();
+        }
+        // 5.2 generate gaussian blur mipmap
+        //if (false)
+        {
+            PLOGD << "RENDER GLOW BRIGHT MIPMAP PASS";
+            GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            glDrawBuffers(1, drawBuffers);
+
+            for (int i = 0; i < GLOW_MIPMAP_LEVEL_COUNT; i++) {
+
+                int inputWidth  = i == 0 ? width  : width  >> (i-1);
+                int inputHeight = i == 0 ? height : height >> (i-1);
+               
+                int outputWidth  =  width  >> i ;
+                int outputHeight =  height >> i ;
+
+                float texelX = 1.0 / inputWidth;
+                float texelY = 1.0 / inputHeight;
+
+                // horizontal gaussian blur 
+                {
+                    glUseProgram(gaussianBlurHorizontalProgramInfo.program);
+                    glViewport(0, 0, outputWidth, outputHeight);
+
+                    // out
+                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glowRenderTargetInfo.blurTempTexture[i], 0);
+                    glClear(GL_COLOR_BUFFER_BIT);
+
+                    // in
+                    if (i == 0) {
+                        glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, glowRenderTargetInfo.glowBrightTexure);
+                    }
+                    else {
+                        glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, glowRenderTargetInfo.mipmapTexture[i-1]);
+                    }
+
+                    glUniform1i(GetUniformLoc(gaussianBlurHorizontalProgramInfo, "u_GlowBrightTexture"), 1);
+                    glUniform2f(GetUniformLoc(gaussianBlurHorizontalProgramInfo, "u_TexelSize"), texelX, texelY);
+                    glBindVertexArray(splatMeshInfo.VAO);
+                    glDrawArrays(GL_TRIANGLES, 0, 3);
+                }
+
+                // vertical gaussian blur 
+                {
+                    glUseProgram(gaussianBlurVerticalProgramInfo.program);
+                    // out
+                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glowRenderTargetInfo.mipmapTexture[i], 0);
+                    glClear(GL_COLOR_BUFFER_BIT);
+                    // in
+                    glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, glowRenderTargetInfo.blurTempTexture[i]);
+
+                    glUniform1i(GetUniformLoc(gaussianBlurVerticalProgramInfo, "u_GlowBrightTexture"), 1);
+                    glUniform2f(GetUniformLoc(gaussianBlurVerticalProgramInfo, "u_TexelSize"), texelX, texelY);
+                    glBindVertexArray(splatMeshInfo.VAO);
+                    glDrawArrays(GL_TRIANGLES, 0, 3);
+                }
+
+            }
+
+            g_openGLManager.GetGLError();
+
+        }
+        // 5.3 upsample
+        {
+            PLOGD << "RENDER GLOW UPSAMPLE PASS";
+            glUseProgram(postEffectGlowBrightUpsampleProgramInfo.program);
+
+            // out
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glowRenderTargetInfo.glowBrightTexure, 0);
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            glViewport(0, 0, width, height);
+
+            // in 
+            for (int i = 0; i < GLOW_MIPMAP_LEVEL_COUNT; i++) {
+                int level = 1 << i;
+                glActiveTexture(GL_TEXTURE0 + i ); glBindTexture(GL_TEXTURE_2D, glowRenderTargetInfo.mipmapTexture[i]);
+                std::string uniformName = "u_GlowBrightMipmapTexture" + std::to_string(level);
+                glUniform1i(GetUniformLoc(postEffectGlowBrightUpsampleProgramInfo, uniformName.c_str()), i);
+            }
+
+            // screen space render 
+            glBindVertexArray(splatMeshInfo.VAO);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glBindVertexArray(0);
+          
+        }
+        // 5.4 blend
+        {
+            PLOGD << "RENDER GLOW BLEND PASS";
+            glUseProgram(postEffectGlowBlendProgramInfo.program);
+
+            // out
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D , renderTargetInfo.GetNextColorTexture(), 0);
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+            //out
+            glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, renderTargetInfo.GetCurrentColorTexture());
+            glUniform1i(GetUniformLoc(postEffectGlowBlendProgramInfo, "u_RawColorTexture"), 0);
+            glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, glowRenderTargetInfo.glowBrightTexure);
+            glUniform1i(GetUniformLoc(postEffectGlowBlendProgramInfo, "u_GlowBrightTexture"), 1);
+
+            // screen space render 
+            glBindVertexArray(splatMeshInfo.VAO);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glBindVertexArray(0);
+
+            renderTargetInfo.SwapColorTexture();
+        }
+        if (blendWasEnabled) {
+            glEnable(GL_BLEND);
+        }
+    }
+    auto glowEnd = std::chrono::high_resolution_clock::now();
+
 
     std::ostringstream oss;
     g_openGLManager.GetGLError();
@@ -380,14 +542,11 @@ RenderResult GaussianRenderer::GetRenderResult(const ShaderInput& shaderInput) {
     auto afterResize = std::chrono::high_resolution_clock::now();
 
     glBindFramebuffer(GL_FRAMEBUFFER, renderTargetInfo.FBO);
+    glFramebufferTexture2D( GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D, renderTargetInfo.GetCurrentColorTexture(), 0);
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+
     // color buffer 
     auto beforeReadPixels = std::chrono::high_resolution_clock::now();
-    if (shaderInput.renderBlock.advancedDofEnable) {
-        glReadBuffer(GL_COLOR_ATTACHMENT0);
-    }
-    else {
-        glReadBuffer(GL_COLOR_ATTACHMENT1);
-    }
     glReadPixels(
         0, 0,                 
         width, height,        
@@ -554,4 +713,5 @@ void GaussianRenderer::ComputeAnimatedSplatData(
 
 
 }
+
 

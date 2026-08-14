@@ -48,14 +48,47 @@ typedef struct ShaderProgramInfo {
 	GLuint program;
 }ShaderProgramInfo;
 
+// main render tartget
 typedef struct RenderTargetInfo {
+
+	friend class OpenGLManager;
+
+public :
 	uint64_t uniqueID = -1;
 	GLuint FBO;
-	GLuint finalOutputTexture;
-	GLuint colorTexture;
+
+	// dof
 	GLuint depthTexture;
 	GLuint depthRBO;
+
+	// ping-pong color texture here
+	GLuint GetCurrentColorTexture() {
+		return currentColorIndex == 0 ? colorTextureA : colorTextureB;
+	}
+	GLuint GetNextColorTexture() {
+		return currentColorIndex == 0 ? colorTextureB : colorTextureA;
+	}
+	void SwapColorTexture() {
+		currentColorIndex = 1 - currentColorIndex;
+	}
+
+private :
+	int currentColorIndex = 0; 
+	GLuint colorTextureA = 0;
+	GLuint colorTextureB = 0;
+
 }RenderTargetInfo;
+
+
+// 1 , 2 , 4, 8 , 16 , 32 
+#define GLOW_MIPMAP_LEVEL_COUNT  6
+struct GlowRenderTargetInfo {
+	uint64_t uniqueID = -1;
+	GLuint FBO;
+	GLuint glowBrightTexure;
+	GLuint blurTempTexture[GLOW_MIPMAP_LEVEL_COUNT];
+	GLuint mipmapTexture[GLOW_MIPMAP_LEVEL_COUNT] ;
+};
 
 class OpenGLManager {
 
@@ -72,6 +105,7 @@ public :
 	UBOInfo			   CreateUBO(int byteCount, const void* dataPtr);
 	SplatMeshInfo      CreateSplatMesh();
 	RenderTargetInfo   CreateRenderTarget(int width, int height);
+	GlowRenderTargetInfo CreateGlowRenderTarget(int width, int height);
 	ShaderProgramInfo  CreateShaderProgram(ShaderProgramType type);
 	//ShaderProgramInfo  CreateComputeProgram();
 
@@ -79,6 +113,7 @@ public :
 	void DeleteRenderTarget(RenderTargetInfo & info);
 	void DeleteTextureBuffer(TextureBufferInfo& info);
 	void DeleteShaderProgram(ShaderProgramInfo& info);
+	void DeleteGlowRenderTargetInfo(GlowRenderTargetInfo& info);
 	void DeleteSplatMesh(SplatMeshInfo& info);
 	void DeleteSSBO(SSBOInfo& info);
 	void DeleteUBO(UBOInfo& info);
@@ -94,13 +129,13 @@ private :
 	GLuint CompileShader(GLenum type, const char* source);
 	void LogRenderInfoUniformIndex(GLuint program, const char* uniformName);
 
-	std::unordered_map<int , TextureBufferInfo>  textureBuffers = {};
-	std::unordered_map<int , SplatMeshInfo>      splatMeshes = {};
-	std::unordered_map<int , RenderTargetInfo>   renderTargets = {};
-	std::unordered_map<int , ShaderProgramInfo>  shaderPrograms = {};
-	std::unordered_map<int , SSBOInfo>			 SSBOs = {};
-	std::unordered_map<int , UBOInfo>			 UBOs = {};
-
+	std::unordered_map<int , TextureBufferInfo>    textureBuffers = {};
+	std::unordered_map<int , SplatMeshInfo>        splatMeshes = {};
+	std::unordered_map<int , RenderTargetInfo>     renderTargets = {};
+	std::unordered_map<int , GlowRenderTargetInfo> glowRenderTargets = {};
+	std::unordered_map<int , ShaderProgramInfo>    shaderPrograms = {};
+	std::unordered_map<int , SSBOInfo>			   SSBOs = {};
+	std::unordered_map<int , UBOInfo>			   UBOs = {};
 
 	GLint workGroupCount[3] = { 0 };
 	GLint workGroupSize[3] = { 0 };

@@ -31,6 +31,9 @@ void main() {
     vec3 positionAnchor = positionAnchor4.xyz / positionAnchor4.w;
    
     //splat scale 
+    
+    bool shouldClampMinScreenSize = false;
+    float sizeFactor = 1.0;
     if (u_renderInfo.splatScaleEnable == 1.0)
     {
         vec3 sizeNormalDir = (positionAnchor - u_renderInfo.splatScaleShapeCenter.xyz);
@@ -43,9 +46,27 @@ void main() {
         
         float sizeLerpFactor = clamp((sizeNormalLength - sizeFeatherInnerBound) / sizeFeatherBand, 0.0, 1.0);
         float sizeRampFactor = 1.0 - GetValueFromBezierCurve(u_splatScaleRamp, sizeLerpFactor);
-        float sizeFactor = mix( 0.0 , u_renderInfo.splatScaleSize, sizeRampFactor);
-        u_splatElement.scale *= sizeFactor;
-        u_splatElement.scale = max(vec3(0.0), u_splatElement.scale);
+        sizeFactor = mix( 0.0 , u_renderInfo.splatScaleSize, sizeRampFactor);
+        //u_splatElement.scale *= sizeFactor;
+        
+        //shouldClampMinScreenSize = sizeFactor < 0.05;
+        
+        //vec4 splatProject = u_renderInfo.projectionMatrix * positionView;
+        //float zNDC = (splatProject.z / splatProject.w) * 0.5 + 0.5 ;
+        //float zLerpFactor = clamp(zNDC * 2, 0.0 , 1.0);
+        //vec3 minScale = vec3(mix(0.0001, 0.001, zNDC));
+        //if (sizeFactor < 0.1)
+        //{
+        //    u_splatElement.scale = max(u_splatElement.scale, minScale);
+        //}
+        
+        //// [0 , 1]
+        //
+        //vec3 minScale = vec3(mix(0.000000, 0.001, zNDC));
+        //if (u_renderInfo.splatScaleSize > 0)
+        //{
+        //    u_splatElement.scale = max(u_splatElement.scale, minScale);
+        //}
 
     }
     
@@ -135,8 +156,9 @@ void main() {
         color = mix(color, vec4(0, 0, 0, 0), cropMask);
     }
     
-
-    vec4 splatProject = ComputeSplatProject(positionView);
+    //vec4 splatProject = ComputeSplatProject(positionView, shouldClampMinScreenSize);
+    vec4 splatProject = ComputeSplatProject(positionView, sizeFactor);
+   
 
     gl_Position = splatProject;
     // [-near , -far] 

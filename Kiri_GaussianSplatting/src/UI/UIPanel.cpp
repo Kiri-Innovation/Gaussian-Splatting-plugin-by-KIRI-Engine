@@ -1061,6 +1061,86 @@ PF_Err static SetupDofUI(PF_InData* in_data, PF_OutData* out_data) {
 	return err;
 }
 
+PF_Err static SetupGlowUI(PF_InData* in_data, PF_OutData* out_data) {
+	PF_Err		err = PF_Err_NONE;
+	PF_ParamDef	def;
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_TOPICX(
+		STR(STRID_KIRI_ADVANCED_GLOW_TOPIC),
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_ADVANCED_GLOW_TOPIC_BEGIN)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_CHECKBOXX(
+		STR(STRID_KIRI_ADVANCED_GLOW_ENABLE),
+		0,
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_ADVANCED_GLOW_ENABLE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_POPUPX(
+		STR(STRID_KIRI_ADVANCED_GLOW_BLEND_MODE),
+		2,
+		2,
+		"Add|Screen",
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_ADVANCED_GLOW_BLEND_MODE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_KIRI_ADVANCED_GLOW_RADIUS),
+		0.0f,
+		1.0f,
+		0.0f,
+		1.0f,
+		1.0f,
+		0.1f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_NONE,
+		0,
+		DISK_ID(KIRI_ADVANCED_GLOW_RADIUS)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_KIRI_ADVANCED_GLOW_THRESHOLD),
+		0.0f,
+		1.0f,
+		0.0f,
+		1.0f,
+		1.0f,
+		0.1f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_NONE,
+		0,
+		DISK_ID(KIRI_ADVANCED_GLOW_THRESHOLD)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_KIRI_ADVANCED_GLOW_SMOOTH),
+		0.0f,
+		1.0f,
+		0.0f,
+		1.0f,
+		1.0f,
+		0.1f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_NONE,
+		0,
+		DISK_ID(KIRI_ADVANCED_GLOW_SMOOTH)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_END_TOPIC(DISK_ID(KIRI_ADVANCED_GLOW_TOPIC_END));
+
+	return err;
+}
+
 PF_Err SetupAdvancedUI(PF_InData* in_data, PF_OutData* out_data) {
 	PF_Err		err = PF_Err_NONE;
 	PF_ParamDef	def;
@@ -1149,6 +1229,7 @@ PF_Err SetupAdvancedUI(PF_InData* in_data, PF_OutData* out_data) {
 	);
 
 	SetupDofUI(in_data, out_data);
+	SetupGlowUI(in_data, out_data);
 
 	AEFX_CLR_STRUCT(def);
 	PF_END_TOPIC(DISK_ID(KIRI_ADVANCED_TOPIC_END));
@@ -1160,8 +1241,6 @@ PF_Err SetupAlignUI(PF_InData* in_data, PF_OutData* out_data) {
 	PF_Err		err = PF_Err_NONE;
 	PF_ParamDef	def;
 	
-
-
 	AEFX_CLR_STRUCT(def);
 	PF_ADD_TOPICX(
 		STR(STRID_ALIGN_TOPIC),

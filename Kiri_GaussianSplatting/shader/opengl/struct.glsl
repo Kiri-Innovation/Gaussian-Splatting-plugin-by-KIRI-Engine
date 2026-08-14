@@ -91,6 +91,12 @@ struct RenderInfo {
     float advancedDofAperture;
     float advancedDofBlurLevel;
     
+    float advancedGlowEnable;
+    float advancedGlowBlendMode;
+    float advancedGlowRadius;
+    float advancedGlowThreshold;
+    float advancedGlowSmooth;
+    
     int splatCount;
     float focalPixelY;
 };

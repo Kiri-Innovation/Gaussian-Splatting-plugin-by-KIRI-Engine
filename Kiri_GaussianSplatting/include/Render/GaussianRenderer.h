@@ -30,8 +30,14 @@ private :
 	ShaderProgramInfo shaderProgramInfo;
 	ShaderProgramInfo computeShaderProgramInfo;
 	ShaderProgramInfo postEffectProgramInfo;
+	ShaderProgramInfo postEffectGlowBrightProgramInfo;
+	ShaderProgramInfo gaussianBlurVerticalProgramInfo;
+	ShaderProgramInfo gaussianBlurHorizontalProgramInfo;
+	ShaderProgramInfo postEffectGlowBrightUpsampleProgramInfo;
+	ShaderProgramInfo postEffectGlowBlendProgramInfo;
 
 	RenderTargetInfo renderTargetInfo;
+	GlowRenderTargetInfo glowRenderTargetInfo;
 	SplatMeshInfo splatMeshInfo;
 	RenderResult renderResult;
 	std::recursive_mutex renderMutex;
