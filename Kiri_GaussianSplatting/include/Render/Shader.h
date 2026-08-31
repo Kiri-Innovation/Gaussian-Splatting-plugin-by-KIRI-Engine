@@ -5,7 +5,16 @@
 enum ShaderProgramType {
 	PointAnimate,
 	Main,
-	PostEffect,
+	PostEffectDof,
+
+    // gaussian blur
+    GaussianBlurVertical,
+    GaussianBlurHorizontal,
+
+    //glow
+    PostEffectGlowBright,
+    PostEffectGlowUpSample,
+    PostEffectGlowBlend
 };
 
 struct ShaderProgramSource {

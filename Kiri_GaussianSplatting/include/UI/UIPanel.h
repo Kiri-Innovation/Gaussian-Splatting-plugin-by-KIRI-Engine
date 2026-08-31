@@ -25,6 +25,7 @@ PF_Err SetupSplatNoiseUI(PF_InData* in_data, PF_OutData* out_data);
 PF_Err SetupSplatOpacityUI(PF_InData* in_data, PF_OutData* out_data);
 PF_Err SetupSplatDisplacementUI(PF_InData* in_data, PF_OutData* out_data);
 PF_Err SetupSplatDenseUI(PF_InData* in_data, PF_OutData* out_data);
+PF_Err SetupSplatInvertSphereUI(PF_InData* in_data, PF_OutData* out_data);
 PF_Err SetupAdvancedUI(PF_InData* in_data, PF_OutData* out_data);
 
 PF_Err InitUISeqData(PF_InData* in_data, PF_OutData* out_data);

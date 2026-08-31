@@ -120,7 +120,7 @@ void GetSplatElement(int instanceID){
   
 }
 
-vec4 ComputeSplatProject(vec4 splat_cam)
+vec4 ComputeSplatProject(vec4 splat_cam, float sizeFactor)
 {
     
     vec4 splat_proj = u_renderInfo.projectionMatrix * splat_cam;
@@ -132,30 +132,88 @@ vec4 ComputeSplatProject(vec4 splat_cam)
     
     mat3 cov_3D = ComputeCov3D(u_splatElement.quat, u_splatElement.scale);
     
+    mat3 J_invert_sphere = mat3(1.0);
+    if (u_renderInfo.splatInvertSphereEnable == 1.0)
+    {
+        float R = max(u_renderInfo.splatInvertSphereRaduis, 1e-6);
+        float intensity = clamp(u_renderInfo.splatInvertSphereIntensity, 0.0, 1.0);
+        float D = max(u_renderInfo.splatInvertSphereDistance, R + 1e-6); 
+        float mu = max(u_renderInfo.splatInvertSphereCompression, 0.0) * PERCENT;
+        
+        vec3 anchorPoint = (u_renderInfo.anchorModelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+        vec3 sphereCenterAnchor = u_renderInfo.splatInvertSphereCenter.xyz + anchorPoint;
+        vec3 positionAnchor = (u_renderInfo.anchorModelMatrix * vec4(u_splatElement.position, 1.0)).xyz;
+        vec3 sphereCenter = u_renderInfo.splatInvertSphereCenter.xyz;
+        vec3 offset = positionAnchor - sphereCenterAnchor;
+
+        float r = length(offset);
+
+        if (r > 1e-6 && intensity > 1e-6)  
+        {
+            float denom = 1.0 - (R / D);
+            denom = max(abs(denom), 1e-6) * sign(denom);
+        
+            float r_safe = max(r, 1e-6);
+            float v = ((R / r_safe) - (R / D)) / denom;
+            float dv_dr = -R / (denom * r_safe * r_safe);
+            
+            float h = 0.0;
+            float dh_dr = 0.0;
+            if (abs(mu) < 1e-6)
+            {
+                h = v;
+                dh_dr = dv_dr;
+            }
+            else
+            {
+                float arg = 1.0 + mu * v;
+                arg = max(arg, 1e-6);
+                h = log(arg) / log(1.0 + mu);
+                float dh_dv = (mu / arg) / log(1.0 + mu);
+                dh_dr = dh_dv * dv_dr;
+            }
+            
+            float f_r = mix(r, R * h, intensity);
+            
+            f_r = max(f_r, 1e-6);
+            
+            float s = f_r / r_safe;
+            float df_dr = (1.0f - intensity) + intensity * R * dh_dr;
+            
+            vec3 n = offset / r_safe;
+            mat3 nnT = outerProduct(n, n);
+            J_invert_sphere = s * mat3(1.0) + (df_dr - s) * nnT;
+            J_invert_sphere = mat3(1.0) * (1.0 - intensity) + J_invert_sphere * intensity;
+
+        }
+        //cov_3D = ori_cov_3D;
+    }
+    
+    
     mat3 Vrk = mat3(
         cov_3D[0][0], cov_3D[0][1], cov_3D[0][2],
         cov_3D[0][1], cov_3D[1][1], cov_3D[1][2],
         cov_3D[0][2], cov_3D[1][2], cov_3D[2][2]
     );
 
-    mat3 W = transpose(mat3(u_renderInfo.viewMatrix * u_renderInfo.modelMatrix));
     float fx = u_renderInfo.focalPixelX;
     float fy = u_renderInfo.focalPixelY;
     float x = splat_cam.x;
     float y = splat_cam.y;
     float z = splat_cam.z;
 
-    mat3 J = mat3(
+    mat3 J_project = mat3(
         fx / z, 0.0, -(fx * x) / (z * z),
         0.0, fy / z, -(fy * y) / (z * z),
         0.0, 0.0, 0.0
     );
+    J_project = transpose(J_project);
 
-    // 3.  T =  W * J
-    mat3 T =  W * J;
+    // 3.  T =  local_space -> screen_space
+    mat3 T = J_project * mat3(u_renderInfo.viewMatrix * u_renderInfo.transformModelMatrix) * J_invert_sphere * mat3(u_renderInfo.anchorModelMatrix);
 
     // 4. cov = M * Vrk * M^T
-    mat3 cov_2D = transpose(T) * Vrk * T;
+    mat3 cov_2D = T * Vrk * transpose(T);
 
     float diagonal1   = cov_2D[0][0] +0.3;
     float offDiagonal = cov_2D[0][1];
@@ -170,7 +228,7 @@ vec4 ComputeSplatProject(vec4 splat_cam)
     vec2 v2 = min(sqrt(2.0 * lambda2), 1024.0) * vec2(diagonalVector.y, -diagonalVector.x);
 
 
-    // early out tiny splats
+     // early out tiny splats
      //TODO: figure out length units and expose as uniform parameter
      //TODO: perhaps make this a shader compile-time option
      //if (dot(v1, v1) < 4.0 && dot(v2, v2) < 4.0) {
@@ -178,8 +236,35 @@ vec4 ComputeSplatProject(vec4 splat_cam)
      //}
 
     texCoord = aPos.xy * 4.0;
+    
+    
+    float r1 = length(v1);
+    float r2 = length(v2);
+    
+    float minSplatRadius = 1.0; // pixel
+    float maxAspectRatio = 10.0;
+    
+    float majorR = max(r1, r2);
+    float minorR = max(min(r1, r2), 1e-6);
+    float aspectRatio = majorR / minorR;
+    if (r1 < minSplatRadius || r2 < minSplatRadius || aspectRatio > maxAspectRatio)
+    {
+        return vec4(0.0, 0.0, 2.0, 1.0);
+    }
 
-    splat_proj.xy += (texCoord.x * v1 + texCoord.y * v2) / u_renderInfo.viewport * splat_proj.w;
+    float minR1 = 3.0 * step(0.000001, sizeFactor);
+    float minR2 = 3.0 * step(0.000001, sizeFactor);
+
+    float finalR1 = mix(minR1, r1, sizeFactor);
+    float finalR2 = mix(minR2, r2, sizeFactor);
+
+    v1 = normalize(v1) * finalR1;
+    v2 = normalize(v2) * finalR2;
+    
+    vec2 screenOffset = (texCoord.x * v1 + texCoord.y * v2) / u_renderInfo.viewport * splat_proj.w;
+    
+    
+    splat_proj.xy += screenOffset;
 
     return splat_proj;
 }

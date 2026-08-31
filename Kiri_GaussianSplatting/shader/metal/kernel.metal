@@ -24,6 +24,8 @@ kernel void compute_splat_animate(
     int header = id*3;
     float4 positionLocal = float4(position[header + 0], position[header + 1], position[header + 2], 1.0f);
     float3 positionAnchor = (renderInfo.anchorModelMatrix * positionLocal).xyz;
+
+    float3 anchorPoint = (renderInfo.anchorModelMatrix * float4(0.0, 0.0, 0.0, 1.0)).xyz;
     // compute animate here
 
     float3 displaceOffset =float3(0.0);
@@ -88,6 +90,43 @@ kernel void compute_splat_animate(
     }
    
     positionAnchor += noiseOffset + displaceOffset;
+
+    if (renderInfo.splatInvertSphereEnable == 1.0)
+    {
+        float R = max(renderInfo.splatInvertSphereRaduis, 1e-6);
+        float intensity = clamp(renderInfo.splatInvertSphereIntensity, 0.0, 1.0);
+        float D = renderInfo.splatInvertSphereDistance;
+        float mu = max(renderInfo.splatInvertSphereCompression, 0.0) * PERCENT;
+        
+        float3 sphereCenter = renderInfo.splatInvertSphereCenter.xyz;
+        sphereCenter += anchorPoint;
+        float3 offset = positionAnchor - sphereCenter;
+        
+        float r = length(offset);
+        
+        float3 direction = offset / r;
+        float f_r = r ;
+        
+        if ( r > 1e-6) {
+            float denom = 1.0 - (R / D);
+        
+            float v = ((R / r) - (R / D)) / denom;
+
+            v = clamp(v, 0.0, 1.0);
+            float h = 0.0;
+
+            if (abs(mu) < 1e-6) {
+                h = v;
+            } else {
+                h = log(1.0 + mu * v) / log(1.0 + mu);
+            }
+            
+            float f_r_raw = mix(r, R * h, intensity);  
+            f_r = f_r_raw;
+
+        }
+        positionAnchor = sphereCenter + direction * f_r;
+    }
 
     float4 positionWorld = renderInfo.transformModelMatrix * float4(positionAnchor, 1.0);
     float4 positionView = renderInfo.viewMatrix * positionWorld;

@@ -16,7 +16,7 @@ def process_file(file_path: str, included_files: set) -> str:
     
     included_files.add(file_path)
     print(f"Processing file: {file_path}")
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(file_path, "r", encoding="utf-8-sig") as f:
         for line in f:
             stripped = line.strip()
             
