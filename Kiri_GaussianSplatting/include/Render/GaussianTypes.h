@@ -87,24 +87,31 @@ typedef struct  GaussianRenderInfo {
 	float splatDenseShapeSize;
 	float splatDenseShapeFeather;
 
+
 	float advancedSplatCropNear;
 	float advancedSplatCropFar;
-
 	float advancedCameraFocalLength;
-
 	float advancedSplatCropMaxScale;
-	float advancedSplatCropMinScale;
 
+	float advancedSplatCropMinScale;
 	float advancedDofEnable;
 	float advancedDofFocusDistance;
 	float advancedDofAperture;
-	float advancedDofBlurLevel;
 
+	float advancedDofBlurLevel;
 	float advancedGlowEnable;
 	float advancedGlowBlendMode;
 	float advancedGlowRadius;
+
 	float advancedGlowThreshold;
 	float advancedGlowSmooth;
+	float splatInvertSphereEnable;
+	float splatInvertSphereRaduis;
+
+	glm::vec4 splatInvertSphereCenter;
+	float splatInvertSphereIntensity;
+	float splatInvertSphereDistance;
+	float splatInvertSphereCompression;
 	// do not change the above member order for std 140 layout
 
 	int splatCount;
@@ -226,22 +233,28 @@ typedef struct AEStreamValueInfo {
 
 	float advancedSplatCropNear;
 	float advancedSplatCropFar;
-
 	float advancedCameraFocalLength;
-
 	float advancedSplatCropMaxScale;
-	float advancedSplatCropMinScale;
 
+	float advancedSplatCropMinScale;
 	float advancedDofEnable;
 	float advancedDofFocusDistance;
 	float advancedDofAperture;
-	float advancedDofBlurLevel;
 
+	float advancedDofBlurLevel;
 	float advancedGlowEnable;
 	float advancedGlowBlendMode;
 	float advancedGlowRadius;
+
 	float advancedGlowThreshold;
 	float advancedGlowSmooth;
+	float splatInvertSphereEnable;
+	float splatInvertSphereRaduis;
+
+	glm::vec4 splatInvertSphereCenter;
+	float splatInvertSphereIntensity;
+	float splatInvertSphereDistance;
+	float splatInvertSphereCompression;
 
 	float pad_end;
 	// do not change the above member order for std 140 layout

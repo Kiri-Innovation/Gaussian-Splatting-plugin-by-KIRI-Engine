@@ -40,14 +40,13 @@ void main()
         return;
     }
 
-
     int header = idx * 3 ;
     vec4 positionLocal = vec4(position[header + 0], position[header + 1], position[header + 2], 1.0f);
     vec3 positionAnchor = (u_renderInfo.anchorModelMatrix * positionLocal).xyz;
-
+    vec3 anchorPoint = (u_renderInfo.anchorModelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
     // compute animate here
 
-    vec3 displaceOffset =vec3(0.0);
+    vec3 displaceOffset = vec3(0.0);
     vec3 noiseOffset = vec3(0.0);
     
    if (u_renderInfo.splatNoiseEnable == 1.0)
@@ -97,14 +96,63 @@ void main()
 
         vec4 targetDisplacePoint = displaceModelMatrix * vec4(positionAnchor, 1.0);
         displaceOffset = targetDisplacePoint.xyz - positionAnchor;
-    //vec3 displaceOffset = u_renderInfo.splatDisplacementShapeCenter.xyz * u_renderInfo.splatDisplacementShapeSize * displaceMask;
+        //vec3 displaceOffset = u_renderInfo.splatDisplacementShapeCenter.xyz * u_renderInfo.splatDisplacementShapeSize * displaceMask;
         displaceOffset *= displaceMask;
     }
    
     positionAnchor += noiseOffset + displaceOffset;
+    
+     if (u_renderInfo.splatInvertSphereEnable == 1.0){
+        //positionAnchor += sphereCenter;
 
-    //viewPosition[idx] =  float(idx) * 3.0 ;
+        float R = max(u_renderInfo.splatInvertSphereRaduis, 1e-6);
+        float intensity = clamp(u_renderInfo.splatInvertSphereIntensity, 0.0, 1.0);
+        float D = u_renderInfo.splatInvertSphereDistance;
+        float mu = max(u_renderInfo.splatInvertSphereCompression, 0.0) * PERCENT;
+        
+        vec3 sphereCenter = u_renderInfo.splatInvertSphereCenter.xyz;
+        sphereCenter += anchorPoint;
+        vec3 offset = positionAnchor - sphereCenter;
+        
+        float r = length(offset);
+        
+        vec3 direction = offset / r;
+        float f_r = r ;
+        
+        if ( r > 1e-6) {
+            float denom = 1.0 - (R / D);
+        
+            float v = ((R / r) - (R / D)) / denom;
+            //v = clamp(v, 0.0, 1.0);
+        
+            float h = 0.0;
+            if (abs(mu) < 1e-6) {
+                h = v;
+            } else {
+                h = log(1.0 + mu * v) / log(1.0 + mu);
+            }
+        
+            //f_r = mix( r , R * h , intensity) ;
+            //positionAnchor = newPositionAnchor;
+            float f_r_raw = mix(r, R * h, intensity);  
+            f_r = f_r_raw;
+            
+            //if (f_r_raw > r) {
+            //    float ratio = r / f_r_raw;              
+            //    f_r = r * ratio;                        
+            //} else {
+            //    f_r = f_r_raw;                          
+            //}
+        }
+         positionAnchor = sphereCenter + direction * f_r;
+    }
+
+
+
+
+
     vec4 positionWorld = u_renderInfo.transformModelMatrix * vec4(positionAnchor, 1.0);
+
     vec4 positionView  = u_renderInfo.viewMatrix * positionWorld;
 
     viewPosition[header + 0] =  positionView.x;

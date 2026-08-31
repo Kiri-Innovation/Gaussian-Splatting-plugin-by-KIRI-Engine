@@ -80,10 +80,33 @@ struct RenderInfo {
     float splatDenseShapeSize;
     float splatDenseShapeFeather;
 
+    float advancedSplatCropNear;
+    float advancedSplatCropFar;
+    float advancedCameraFocalLength;
     float advancedSplatCropMaxScale;
-    float advancedSplatCropMinScale;
 
+    float advancedSplatCropMinScale;
+    float advancedDofEnable;
+    float advancedDofFocusDistance;
+    float advancedDofAperture;
+
+    float advancedDofBlurLevel;
+    float advancedGlowEnable;
+    float advancedGlowBlendMode;
+    float advancedGlowRadius;
+
+    float advancedGlowThreshold;
+    float advancedGlowSmooth;
+    float splatInvertSphereEnable;
+    float splatInvertSphereRaduis;
+
+    float4 splatInvertSphereCenter;
+    float splatInvertSphereIntensity;
+    float splatInvertSphereDistance;
+    float splatInvertSphereCompression;
+    
     int splatCount;
+    float focalPixelY;
 
 };
 

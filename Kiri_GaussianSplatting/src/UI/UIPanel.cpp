@@ -1318,10 +1318,104 @@ PF_Err SetupEffectUI(PF_InData* in_data, PF_OutData* out_data) {
 	ERR(SetupSplatOpacityUI(in_data, out_data));
 	ERR(SetupSplatDisplacementUI(in_data, out_data));
 	ERR(SetupSplatDenseUI(in_data, out_data));
+	ERR(SetupSplatInvertSphereUI(in_data, out_data));
 
 	PF_END_TOPIC(DISK_ID(KIRI_EFFECT_TOPIC_END));
 }
 
+PF_Err SetupSplatInvertSphereUI(PF_InData* in_data, PF_OutData* out_data) {
+	PF_Err		err = PF_Err_NONE;
+
+	PF_ParamDef	def;
+	PF_ADD_TOPICX(
+		STR(STRID_INVERT_SPHERE_TOPIC),
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_INVERT_SPHERE_TOPIC_BEGIN)
+	);
+
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_CHECKBOXX(
+		STR(STRID_INVERT_SPHERE_ENABLE),
+		0,
+		PF_ParamFlag_NONE,
+		DISK_ID(KIRI_SPLAT_DENSE_ENABLE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_POINT_3D(
+		STR(STRID_INVERT_SPHERE_CENTER),
+		0, 0, 0,
+		DISK_ID(KIRI_INVERT_SPHERE_CENTER)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_INVERT_SPHERE_RADIUS),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_INVERT_SPHERE_RADIUS)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_INVERT_SPHERE_INTENSITY),
+		0.0f,
+		100.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_INVERT_SPHERE_INTENSITY)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_INVERT_SPHERE_DISTANCE),
+		0.0f,
+		999999.0f,
+		0.0f,
+		999999.0f,
+		1.0f,
+		999999.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_INVERT_SPHERE_DISTANCE)
+	);
+
+	AEFX_CLR_STRUCT(def);
+	PF_ADD_FLOAT_SLIDER(
+		STR(STRID_INVERT_SPHERE_COMPRESSION),
+		0.0f,
+		10000.0f,
+		0.0f,
+		100.0f,
+		1.0f,
+		100.0f,
+		PF_Precision_TENTHS,
+		PF_ValueDisplayFlag_PERCENT,
+		0,
+		DISK_ID(KIRI_INVERT_SPHERE_COMPRESSION)
+	);
+
+
+	
+	AEFX_CLR_STRUCT(def);
+	PF_END_TOPIC(DISK_ID(KIRI_INVERT_SPHERE_TOPIC_END));
+
+	return err;
+}
 
 PF_Err SetupSplatDenseUI(PF_InData* in_data, PF_OutData* out_data) {
 

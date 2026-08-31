@@ -205,8 +205,19 @@ void GaussianRenderer::Render(GaussianModel& gaussianModel,
             glBindVertexArray(splatMeshInfo.VAO);
             glDrawArrays(GL_TRIANGLES, 0, 3);
             glBindVertexArray(0);
-        
-
+            
+            if (0)
+            {
+                std::vector<unsigned char> pixels(width * height * 4);
+                
+                glBindTexture(GL_TEXTURE_2D, glowRenderTargetInfo.glowBrightTexure);
+                //glBindTexture(GL_TEXTURE_2D, renderTargetInfo.colorTexture);
+                glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+                glBindTexture(GL_TEXTURE_2D, 0);
+                
+                int result = stbi_write_png("C:\\Users\\xiaoh\\Desktop\\glow_test_plugin\\glow_bright.png", width, height, 4, pixels.data(), 0);
+            }
+            
             //glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, 0);
 
             g_openGLManager.GetGLError();
@@ -268,6 +279,19 @@ void GaussianRenderer::Render(GaussianModel& gaussianModel,
                     glDrawArrays(GL_TRIANGLES, 0, 3);
                 }
 
+                // write test
+                if (0)
+                {
+                    int saveWidth  = outputWidth;
+                    int saveHeight = outputHeight;
+                    std::vector<unsigned char> pixels(saveWidth* saveHeight * 4);
+                    glBindTexture(GL_TEXTURE_2D, glowRenderTargetInfo.mipmapTexture[i]);
+                    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+                    glBindTexture(GL_TEXTURE_2D, 0);
+                    
+                    std::string filename = "C:\\Users\\xiaoh\\Desktop\\glow_test_plugin\\glow_bright_blur_" + std::to_string(i) + ".png";
+                    int result = stbi_write_png(filename.c_str(), saveWidth, saveHeight, 4, pixels.data(), 0);
+                }
             }
 
             g_openGLManager.GetGLError();
@@ -295,6 +319,18 @@ void GaussianRenderer::Render(GaussianModel& gaussianModel,
             glBindVertexArray(splatMeshInfo.VAO);
             glDrawArrays(GL_TRIANGLES, 0, 3);
             glBindVertexArray(0);
+
+            if (0)
+            {
+                std::vector<unsigned char> pixels(width * height * 4);
+                
+                glBindTexture(GL_TEXTURE_2D, glowRenderTargetInfo.glowBrightTexure);
+                //glBindTexture(GL_TEXTURE_2D, renderTargetInfo.colorTexture);
+                glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+                glBindTexture(GL_TEXTURE_2D, 0);
+                
+                int result = stbi_write_png("C:\\Users\\xiaoh\\Desktop\\glow_test_plugin\\glow_bright_upsample.png", width, height, 4, pixels.data(), 0);
+            }
           
         }
         // 5.4 blend
@@ -318,6 +354,18 @@ void GaussianRenderer::Render(GaussianModel& gaussianModel,
             glBindVertexArray(0);
 
             renderTargetInfo.SwapColorTexture();
+            if (0)
+            {
+                std::vector<unsigned char> pixels(width * height * 4);
+
+                glBindTexture(GL_TEXTURE_2D, renderTargetInfo.GetCurrentColorTexture());
+                //glBindTexture(GL_TEXTURE_2D, renderTargetInfo.colorTexture);
+                glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+                glBindTexture(GL_TEXTURE_2D, 0);
+
+                int result = stbi_write_png("C:\\Users\\xiaoh\\Desktop\\glow_test_plugin\\glow_bright_blend.png", width, height, 4, pixels.data(), 0);
+            }
+
         }
         if (blendWasEnabled) {
             glEnable(GL_BLEND);

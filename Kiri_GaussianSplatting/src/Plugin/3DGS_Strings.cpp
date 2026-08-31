@@ -198,6 +198,15 @@ TableString g_strs[STRID_NUMTYPES] = {
 	{ STRID_SPLAT_DENSE_SHAPE_CENTER,   { "Dense Shape Center" , "中心" } },
 	{ STRID_SPLAT_DENSE_SHAPE_FEATHER,  { "Dense Shape Center" , "羽化" } },
 
+
+	{ STRID_INVERT_SPHERE_TOPIC,		{ "Invert Sphere" ,"球面反转"  }},
+	{ STRID_INVERT_SPHERE_ENABLE,		{ "Enable"  ,		"启动"  }}, 
+	{ STRID_INVERT_SPHERE_CENTER,		{ "Center"  ,		"中心"  }}, 
+	{ STRID_INVERT_SPHERE_RADIUS,		{ "Radius"  ,		"半径"  }}, 
+	{ STRID_INVERT_SPHERE_INTENSITY,	{ "Intensity" ,	"反转强度"  }}, 
+	{ STRID_INVERT_SPHERE_DISTANCE,		{ "Distance"  ,	"临界距离"  }},
+	{ STRID_INVERT_SPHERE_COMPRESSION,	{ "Compression" , "压缩密度"  }},
+
 	// ================= Advanced =================
 	{ STRID_ADVANCED_TOPIC,               { "Advanced", "高级" } },
 	{ STRID_ADVANCED_CAMERA_FOCAL_LENGTH, { "Camera Focal Length", "焦距" } },

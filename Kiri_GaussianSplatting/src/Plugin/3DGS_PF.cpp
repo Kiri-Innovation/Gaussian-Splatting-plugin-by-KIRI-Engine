@@ -449,25 +449,6 @@ ParamsSetup(
 
 	std::unordered_map<uint32_t, std::string> diskIdMap;
 
-	//std::ostringstream oss;
-	//for (auto e : magic_enum::enum_values<KIRIParamIdx>()) {
-	//	auto name = std::string( magic_enum::enum_name(e));
-	//	uint32_t diskID = GetDiskId(e);
-	//
-	//	auto [it, inserted] = diskIdMap.emplace(diskID, name);
-	//	oss.str("");
-	//	if (!inserted) {
-	//		oss << "duplicate diskID: " << diskID
-	//			<< " current=" << name
-	//			<< " previous=" << it->second;
-	//		PLOGI <<oss.str());
-	//	}
-	//	else {
-	//		oss << name << " " << diskID;
-	//		PLOGI <<oss.str());
-	//	}
-	//}
-
 	ERR(SetupLayerInputUI(in_data, out_data));
 	ERR(SetupAlignUI(in_data, out_data));
 	ERR(SetupTransformUI(in_data, out_data));
@@ -1137,6 +1118,37 @@ GetAEStreamValueInfo(
 			info.splatDenseShapeFeather = (float)val.val.one_d / 100.0;
 		}));
 	// ====== Splat Dense  =======
+
+	// ====== Splat Invert Sphere  =======
+	info.splatInvertSphereEnable = params[KIRI_INVERT_SPHERE_ENABLE]->u.bd.value;
+
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_INVERT_SPHERE_CENTER,
+		[&](const AEGP_StreamValue& val) {
+			info.splatInvertSphereCenter.x = (float)val.val.three_d.x;
+			info.splatInvertSphereCenter.y = (float)val.val.three_d.y;
+			info.splatInvertSphereCenter.z = (float)val.val.three_d.z;
+		}));
+
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_INVERT_SPHERE_RADIUS,
+		[&](const AEGP_StreamValue& val) {
+			info.splatInvertSphereRaduis = (float)val.val.one_d;
+		}));
+
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_INVERT_SPHERE_INTENSITY,
+		[&](const AEGP_StreamValue& val) {
+			info.splatInvertSphereIntensity = (float)val.val.one_d / 100.0f;
+		}));
+
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_INVERT_SPHERE_DISTANCE,
+		[&](const AEGP_StreamValue& val) {
+			info.splatInvertSphereDistance = (float)val.val.one_d;
+		}));
+
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_INVERT_SPHERE_COMPRESSION,
+		[&](const AEGP_StreamValue& val) {
+			info.splatInvertSphereCompression = (float)val.val.one_d;
+		}));
+	// ====== Splat Invert Sphere  =======
 
 	// ====== Advanced  =======
 	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_ADVANCED_CAMERA_FOCAL_LENGTH,
