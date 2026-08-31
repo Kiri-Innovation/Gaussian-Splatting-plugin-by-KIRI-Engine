@@ -169,6 +169,7 @@ GetSelectedLayer(
 
 	if (val.val.layer_id == AEGP_LayerIDVal_NONE) {
 		layerH = NULL;
+		ERR(suites.StreamSuite2()->AEGP_DisposeStreamValue(&val));
 		return err;
 	}
 
@@ -207,34 +208,10 @@ GetSelectedLayer(
 	//oss << "source_nameZ " << source_nameZ;
 	PLOGI << " source_nameZ {}", source_nameZ;
 
-	return err;
-}
-
-
-static PF_Err
-GetCameraStreamValue(
-	 PF_InData* in_data,
-	 AEGP_LayerH cameraLayerH)
-{
-	PF_Err err = PF_Err_NONE;
-
-	AEGP_SuiteHandler suites(in_data->pica_basicP);
-
-	AEGP_StreamRefH streamH = nullptr;
-	ERR(suites.DynamicStreamSuite4()->AEGP_GetNewStreamRefForLayer(
-		g_pluginID, 
-		cameraLayerH, 
-		&streamH));
-
-	A_Time* timePT = NULL;
-	AEGP_StreamValue2* valueP = NULL;
-	ERR(suites.StreamSuite6()->AEGP_GetNewStreamValue(
-		g_pluginID , 
-		streamH , 
-		AEGP_LTimeMode_CompTime ,
-		timePT,
-		TRUE,
-		valueP));
+	// release
+	ERR(suites.StreamSuite2()->AEGP_DisposeStreamValue(&val));
+	ERR(suites.StreamSuite2()->AEGP_DisposeStream(streamH));
+	ERR(suites.EffectSuite5()->AEGP_DisposeEffect(effectPH));
 
 	return err;
 }
@@ -293,16 +270,6 @@ CalcShaderInput(
 
 	glm::mat4 cameraView = glm::inverse(cameraModel);
 
-<<<<<<< Updated upstream
-	//AEGP_StreamValue2 value = {};
-	//ERR(GetCameraProperty(in_data, AEGP_LayerStream_FOCUS_DISTANCE, value));
-	//float focalLength = value.val.one_d;
-	//if (focalLength == 0) {
-	//	focalLength = 1500;
-	//}
-	
-=======
->>>>>>> Stashed changes
 	// align anchor TRS
 	glm::mat4 anchorModelMatrix = glm::mat4(1);
 	anchorModelMatrix = glm::translate(anchorModelMatrix, streamValueInfo.anchorPosition);
@@ -312,10 +279,6 @@ CalcShaderInput(
 	anchorModelMatrix = glm::scale(anchorModelMatrix, glm::vec3(1000, 1000, 1000));
 	anchorModelMatrix = glm::scale(anchorModelMatrix, streamValueInfo.anchorScale);
 
-
-	//glm::vec3 origin = glm::vec3(gaussianRenderInfo.viewport[0] / 2, gaussianRenderInfo.viewport[1] / 2, -2 * focalLength);
-	//origin = glm::vec3(0,0, 0);
-	//glm::vec3 offsetPosition =  (origin + streamValueInfo.transformPosition);
 	// TRS
 	glm::mat4 gaussianModelMatrix = glm::mat4(1.0f);
 	glm::mat4 transformMatrix = glm::mat4(1.0f);
@@ -338,12 +301,7 @@ CalcShaderInput(
 	gaussianRenderInfo.viewport[0] = width;
 	gaussianRenderInfo.viewport[1] = height;
 	// radians 
-<<<<<<< Updated upstream
-	
-	//float fovY = 2.0f * glm::atan(height / (2.0f * focalLength));
-=======
 
->>>>>>> Stashed changes
 	float fovY = 2.0f * glm::atan(height / (2.0f * streamValueInfo.advancedCameraFocalLength));
 
 	float focalPixelY;
@@ -359,14 +317,8 @@ CalcShaderInput(
 
 	// focal in pixel = 2 * cameraInfo.focalLength
 	gaussianRenderInfo.focalPixelX = width * gaussianRenderInfo.projectionMatrix[0][0];
-<<<<<<< Updated upstream
-	gaussianRenderInfo.focalPixelY = height * gaussianRenderInfo.projectionMatrix[1][1];	//auto focalY = height * gaussianRenderInfo.projectionMatrix[1][1];
-
-=======
 	gaussianRenderInfo.focalPixelY = height * gaussianRenderInfo.projectionMatrix[1][1];
->>>>>>> Stashed changes
 	gaussianRenderInfo.splatCount = gaussianModel.splatCount;
-	//PLOGI <<"focalX focalY {} {}" , gaussianRenderInfo.focalPixelX , focalY);
 
 	// gaussianRenderInfo memcpy
 	int gaussianRenderInfoOffset = offsetof(GaussianRenderInfo, colorShapeCenter);
@@ -376,7 +328,6 @@ CalcShaderInput(
 	memcpy(reinterpret_cast<char*>(&gaussianRenderInfo) + gaussianRenderInfoOffset,
 		reinterpret_cast<char*>(&streamValueInfo) + streamValueInfoOffsetBegin,
 		memSize);
-
 
 
 	// ColorGradientInfoGpu memcpy
@@ -621,15 +572,7 @@ DownSampling(A_long		xL,
 	int downsampleY = MIN(renderResult->height - yL * renderResult->ratio_y, renderResult->height - 1);
 
 	int headerIndex = (downsampleY * renderResult->width + downsampleX) * 4;
-<<<<<<< Updated upstream
-	
-    //finalRGBA[0] = renderResult->pixelPtr.get()[headerIndex + 0];
-    //finalRGBA[1] = renderResult->pixelPtr.get()[headerIndex + 1];
-    //finalRGBA[2] = renderResult->pixelPtr.get()[headerIndex + 2];
-	//finalRGBA[3] = renderResult->pixelPtr.get()[headerIndex + 3]; 
-=======
 
->>>>>>> Stashed changes
 	finalRGBA->alpha = renderResult->pixelPtr.get()[headerIndex + 3];
 	memcpy(&finalRGBA->red, &renderResult->pixelPtr.get()[headerIndex + 0], 3 * sizeof(char));
 }
@@ -683,8 +626,47 @@ GetStreamValue(
 		FALSE,
 		&val
 	));
+
 	return err;
 }
+
+static PF_Err
+ReleaseStreamValue(
+	AEGP_SuiteHandler& suites, /*  in  */
+	AEGP_StreamRefH& streamH,  /*  out  */
+	AEGP_StreamValue& val     /*  out  */
+)
+{
+	PF_Err		err = PF_Err_NONE;
+	ERR(suites.StreamSuite2()->AEGP_DisposeStreamValue(&val));
+	ERR(suites.StreamSuite2()->AEGP_DisposeStream(streamH));
+
+	return err;
+}
+
+template <typename Fn>
+static PF_Err WithStreamValue(
+	AEGP_SuiteHandler& suites,
+	AEGP_EffectRefH effectPH,
+	A_Time& timeT,
+	KIRIParamIdx idx,
+	Fn&& useValue)
+{
+	PF_Err err = PF_Err_NONE;
+
+	AEGP_StreamRefH streamH = nullptr;
+	AEGP_StreamValue val;
+	AEFX_CLR_STRUCT(val);
+
+	ERR(GetStreamValue(suites, streamH, effectPH, timeT, idx, val));
+
+	useValue(val);
+
+	ERR(ReleaseStreamValue(suites, streamH, val));
+
+	return err;
+}
+
 
 static PF_Err
 GetAEStreamValueInfo(
@@ -732,18 +714,6 @@ GetAEStreamValueInfo(
 	info.splatEnable = params[KIRI_SPLAT_ENABLE]->u.bd.value;
 
 	// ====== anchor ======
-<<<<<<< Updated upstream
-		
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_ALIGN_ANCHOR_POSITION, val));
-	info.anchorPosition[0] = (float)val.val.three_d.x;
-	info.anchorPosition[1] = (float)val.val.three_d.y;
-	info.anchorPosition[2] = (float)val.val.three_d.z;
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_ALIGN_SCALE, val));
-	info.anchorScale.r = (float)val.val.one_d / 100.0; 
-	info.anchorScale.g = (float)val.val.one_d / 100.0; 
-	info.anchorScale.b = (float)val.val.one_d / 100.0; 
-=======
 	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_ALIGN_ANCHOR_POSITION,
 		[&](const AEGP_StreamValue& val) {
 			info.anchorPosition[0] = (float)val.val.three_d.x;
@@ -772,32 +742,11 @@ GetAEStreamValueInfo(
 		[&](const AEGP_StreamValue& val) {
 			info.anchorRotation.z = -(float)val.val.one_d;
 		}));
->>>>>>> Stashed changes
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_ALIGN_ROTATION_X, val));
-	info.anchorRotation.x = (float)val.val.one_d;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_ALIGN_ROTATION_Y, val));
-	info.anchorRotation.y = (float)val.val.one_d;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_ALIGN_ROTATION_Z, val));
-	info.anchorRotation.z = -(float)val.val.one_d;
 	// ====== anchor ======
 
 
 	// ====== transform======
-<<<<<<< Updated upstream
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_TRANSFORM_POSITION, val));
-	info.transformPosition[0] =  (float)val.val.three_d.x; 
-	info.transformPosition[1] =  (float)val.val.three_d.y; 
-	info.transformPosition[2] =  (float)val.val.three_d.z; 
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_TRANSFORM_SCALE, val));
-	info.transformScale.r =  (float)val.val.one_d / 100.0; 
-	info.transformScale.g =  (float)val.val.one_d / 100.0; 
-	info.transformScale.b =  (float)val.val.one_d / 100.0; 
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_TRANSFORM_ROTATION_X , val));
-	info.trasnformRotation.x = (float)val.val.one_d;
-=======
 	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_TRANSFORM_POSITION,
 		[&](const AEGP_StreamValue& val) {
 			info.transformPosition[0] = (float)val.val.three_d.x;
@@ -824,38 +773,10 @@ GetAEStreamValueInfo(
 		[&](const AEGP_StreamValue& val) {
 			info.trasnformRotation.z = -(float)val.val.one_d;
 		}));
->>>>>>> Stashed changes
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_TRANSFORM_ROTATION_Y, val));
-	info.trasnformRotation.y = (float)val.val.one_d;
-	
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_TRANSFORM_ROTATION_Z, val));
-	info.trasnformRotation.z = -(float)val.val.one_d;
 	// ====== transform======
 
 	// ====== render =======
-<<<<<<< Updated upstream
-	
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_RENDER_COLOR_SHAPE_CENTER, val));
-	info.colorShapeCenter.x = (float)val.val.three_d.x;
-	info.colorShapeCenter.y = (float)val.val.three_d.y;
-	info.colorShapeCenter.z = (float)val.val.three_d.z;
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_RENDER_COLOR_SHAPE_FEATHER, val));
-	info.colorShapeFeather = (float)val.val.one_d /100.0;
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_RENDER_COLOR_SHAPE_SCALE_X, val));
-	info.colorShapeScaleXYZ.x = (float)val.val.one_d;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_RENDER_COLOR_SHAPE_SCALE_Y, val));
-	info.colorShapeScaleXYZ.y = (float)val.val.one_d;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_RENDER_COLOR_SHAPE_SCALE_Z, val));
-	info.colorShapeScaleXYZ.z = (float)val.val.one_d;
-
-	info.shDegree = params[KIRI_RENDER_SH_DEGREE]->u.bd.value - 1;
-	info.colorEnable = params[KIRI_RENDER_COLOR_ENBALE]->u.bd.value;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_RENDER_COLOR_SHAPE_SIZE, val));
-	info.colorShapeSize = (float)val.val.one_d;
-=======
 
 	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_RENDER_COLOR_SHAPE_CENTER,
 		[&](const AEGP_StreamValue& val) {
@@ -887,7 +808,6 @@ GetAEStreamValueInfo(
 		[&](const AEGP_StreamValue& val) {
 			info.colorShapeSize = (float)val.val.one_d;
 		}));
->>>>>>> Stashed changes
 
 	// ====== render =======
 
@@ -895,29 +815,6 @@ GetAEStreamValueInfo(
 	// ====== crop =======
 	info.cropEnable = params[KIRI_CROP_ENBALE]->u.bd.value;
 
-<<<<<<< Updated upstream
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_CROP_SHAPE_CENTER, val));
-	info.cropShapeCenter.x = (float)val.val.three_d.x;
-	info.cropShapeCenter.y = (float)val.val.three_d.y;
-	info.cropShapeCenter.z = (float)val.val.three_d.z;
-
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_CROP_SHAPE_FEATHER, val));
-	info.cropShapeFeather = (float)val.val.one_d / 100.0;
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_CROP_SHAPE_SCALE_X, val));
-	info.cropShapeScaleXYZ.x = (float)val.val.one_d;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_CROP_SHAPE_SCALE_Y, val));
-	info.cropShapeScaleXYZ.y = (float)val.val.one_d;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_CROP_SHAPE_SCALE_Z, val));
-	info.cropShapeScaleXYZ.z = (float)val.val.one_d;
-
-	info.cropInvert = params[KIRI_CROP_INVERT]->u.bd.value;
-	
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_CROP_SHAPE_SIZE, val));
-	info.cropShapeSize = (float)val.val.one_d;
-	
-=======
 	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_CROP_SHAPE_CENTER,
 		[&](const AEGP_StreamValue& val) {
 			info.cropShapeCenter.x = (float)val.val.three_d.x;
@@ -952,34 +849,11 @@ GetAEStreamValueInfo(
 			info.cropShapeSize = (float)val.val.one_d;
 		}));
 
->>>>>>> Stashed changes
 	// ====== crop =======
 
 	// ====== Splat Scale =======
 	info.splatScaleEnable = params[KIRI_SPLAT_SCALE_ENBALE]->u.bd.value;
 
-<<<<<<< Updated upstream
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_SCALE_SIZE, val));
-	info.splatScaleSize = (float)val.val.one_d /100.0;
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_SCALE_SHAPE_CENTER, val));
-	info.splatScaleShapeCenter.x = (float)val.val.three_d.x;
-	info.splatScaleShapeCenter.y = (float)val.val.three_d.y;
-	info.splatScaleShapeCenter.z = (float)val.val.three_d.z;
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_SCALE_SHAPE_FEATHER, val));
-	info.splatScaleShapeFeather = (float)val.val.one_d / 100.0;
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_SCALE_SHAPE_SCALE_X, val));
-	info.splatScaleShapeScaleXYZ.x = (float)val.val.one_d;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_SCALE_SHAPE_SCALE_Y, val));
-	info.splatScaleShapeScaleXYZ.y = (float)val.val.one_d;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_SCALE_SHAPE_SCALE_Z, val));
-	info.splatScaleShapeScaleXYZ.z = (float)val.val.one_d;
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_SCALE_SHAPE_SIZE, val));
-	info.splatScaleShapeSize = (float)val.val.one_d;
-=======
 	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_SCALE_SIZE,
 		[&](const AEGP_StreamValue& val) {
 			info.splatScaleSize = (float)val.val.one_d / 100.0;
@@ -1016,55 +890,12 @@ GetAEStreamValueInfo(
 		[&](const AEGP_StreamValue& val) {
 			info.splatScaleShapeSize = (float)val.val.one_d;
 		}));
->>>>>>> Stashed changes
 
 	// ====== Splat Scale =======
 
 
 	// ====== Splat Noise  =======
 	info.splatNoiseEnable = params[KIRI_SPLAT_NOISE_ENABLE]->u.bd.value;
-<<<<<<< Updated upstream
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_NOISE_SHAPE_SIZE, val));
-	info.splatNoiseShapeSize = (float)val.val.one_d;
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_NOISE_OCTAVES, val));
-	info.splatNoiseOctaves = (float)val.val.one_d;
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_NOISE_SHAPE_CENTER, val));
-	info.splatNoiseShapeCenter.x = (float)val.val.three_d.x;
-	info.splatNoiseShapeCenter.y = (float)val.val.three_d.y;
-	info.splatNoiseShapeCenter.z = (float)val.val.three_d.z;
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_NOISE_SHAPE_FEATHER, val));
-	info.splatNoiseShapeFeather = (float)val.val.one_d / 100.0;
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_NOISE_SHAPE_SCALE_X, val));
-	info.splatNoiseShapeScaleXYZ.x = (float)val.val.one_d;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_NOISE_SHAPE_SCALE_Y, val));
-	info.splatNoiseShapeScaleXYZ.y = (float)val.val.one_d;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_NOISE_SHAPE_SCALE_Z, val));
-	info.splatNoiseShapeScaleXYZ.z = (float)val.val.one_d;
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_NOISE_PERSISTENCE, val));
-	info.splatNoisePersistence = (float)val.val.one_d;
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_NOISE_LACUNARITY, val));
-	info.splatNoiseLacunarity = (float)val.val.one_d;
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_NOISE_STRENGTH, val));
-	info.splatNoiseStrength = (float)val.val.one_d;
-
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_NOISE_STRENGTH_X, val));
-	info.splatNoiseStrengthX = (float)val.val.one_d;
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_NOISE_STRENGTH_Y, val));
-	info.splatNoiseStrengthY = (float)val.val.one_d;
-
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_NOISE_STRENGTH_Z, val));
-	info.splatNoiseStrengthZ = (float)val.val.one_d;
-=======
 	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_NOISE_SHAPE_SIZE,
 		[&](const AEGP_StreamValue& val) {
 			info.splatNoiseShapeSize = (float)val.val.one_d;
@@ -1131,7 +962,6 @@ GetAEStreamValueInfo(
 		[&](const AEGP_StreamValue& val) {
 			info.splatNoiseStrengthZ = (float)val.val.one_d;
 		}));
->>>>>>> Stashed changes
 
 
 	// ====== Splat Noise  =======
@@ -1139,93 +969,154 @@ GetAEStreamValueInfo(
 	// ====== Splat Opacity  =======
 	info.splatOpacityEnable = params[KIRI_SPLAT_OPACITY_ENABLE]->u.bd.value;
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_OPACITY_SHAPE_CENTER, val));
-	info.splatOpacityShapeCenter.x = (float)val.val.three_d.x;
-	info.splatOpacityShapeCenter.y = (float)val.val.three_d.y;
-	info.splatOpacityShapeCenter.z = (float)val.val.three_d.z;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_OPACITY_SHAPE_CENTER,
+		[&](const AEGP_StreamValue& val) {
+			info.splatOpacityShapeCenter.x = (float)val.val.three_d.x;
+			info.splatOpacityShapeCenter.y = (float)val.val.three_d.y;
+			info.splatOpacityShapeCenter.z = (float)val.val.three_d.z;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_OPACITY_SHAPE_FEATHER, val));
-	info.splatOpacityShapeFeather = (float)val.val.one_d / 100.0;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_OPACITY_SHAPE_FEATHER,
+		[&](const AEGP_StreamValue& val) {
+			info.splatOpacityShapeFeather = (float)val.val.one_d / 100.0;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_OPACITY_SHAPE_SCALE_X, val));
-	info.splatOpacityShapeScaleXYZ.x = (float)val.val.one_d;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_OPACITY_SHAPE_SCALE_Y, val));
-	info.splatOpacityShapeScaleXYZ.y = (float)val.val.one_d;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_OPACITY_SHAPE_SCALE_Z, val));
-	info.splatOpacityShapeScaleXYZ.z = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_OPACITY_SHAPE_SCALE_X,
+		[&](const AEGP_StreamValue& val) {
+			info.splatOpacityShapeScaleXYZ.x = (float)val.val.one_d;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_OPACITY_SHAPE_SIZE, val));
-	info.splatOpacityShapeSize = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_OPACITY_SHAPE_SCALE_Y,
+		[&](const AEGP_StreamValue& val) {
+			info.splatOpacityShapeScaleXYZ.y = (float)val.val.one_d;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_MAX_OPACITY, val));
-	info.splatMaxOpacity = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_OPACITY_SHAPE_SCALE_Z,
+		[&](const AEGP_StreamValue& val) {
+			info.splatOpacityShapeScaleXYZ.z = (float)val.val.one_d;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_MIN_OPACITY, val));
-	info.splatMinOpacity = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_OPACITY_SHAPE_SIZE,
+		[&](const AEGP_StreamValue& val) {
+			info.splatOpacityShapeSize = (float)val.val.one_d;
+		}));
+
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_MAX_OPACITY,
+		[&](const AEGP_StreamValue& val) {
+			info.splatMaxOpacity = (float)val.val.one_d;
+		}));
+
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_MIN_OPACITY,
+		[&](const AEGP_StreamValue& val) {
+			info.splatMinOpacity = (float)val.val.one_d;
+		}));
 
 	// ====== Splat Opacity  =======
 
 	// ====== Splat Displacement  =======
 	info.splatDisplacementEnable = params[KIRI_SPLAT_DISPLACEMENT_ENABLE]->u.bd.value;
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_SCALE, val));
-	info.splatDisplacementScale = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_SCALE,
+		[&](const AEGP_StreamValue& val) {
+			info.splatDisplacementScale = (float)val.val.one_d;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_OFFSET, val));
-	info.splatDisplacementOffset.x = (float)val.val.three_d.x;
-	info.splatDisplacementOffset.y = (float)val.val.three_d.y;
-	info.splatDisplacementOffset.z = (float)val.val.three_d.z;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_OFFSET,
+		[&](const AEGP_StreamValue& val) {
+			info.splatDisplacementOffset.x = (float)val.val.three_d.x;
+			info.splatDisplacementOffset.y = (float)val.val.three_d.y;
+			info.splatDisplacementOffset.z = (float)val.val.three_d.z;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_SHAPE_FEATHER, val));
-	info.splatDisplacementShapeFeather = (float)val.val.one_d / 100.0;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_SHAPE_FEATHER,
+		[&](const AEGP_StreamValue& val) {
+			info.splatDisplacementShapeFeather = (float)val.val.one_d / 100.0;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_ROTATION_X, val));
-	info.splatDisplacementRotation.x = (float)val.val.one_d;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_ROTATION_Y, val));
-	info.splatDisplacementRotation.y = (float)val.val.one_d;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_ROTATION_Z, val));
-	info.splatDisplacementRotation.z = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_ROTATION_X,
+		[&](const AEGP_StreamValue& val) {
+			info.splatDisplacementRotation.x = (float)val.val.one_d;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_SHAPE_SCALE_X, val));
-	info.splatDisplacementShapeScale.x = (float)val.val.one_d;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_SHAPE_SCALE_Y, val));
-	info.splatDisplacementShapeScale.y = (float)val.val.one_d;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_SHAPE_SCALE_Z, val));
-	info.splatDisplacementShapeScale.z = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_ROTATION_Y,
+		[&](const AEGP_StreamValue& val) {
+			info.splatDisplacementRotation.y = (float)val.val.one_d;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_SHAPE_CENTER, val));
-	info.splatDisplacementShapeCenter.x = (float)val.val.three_d.x;
-	info.splatDisplacementShapeCenter.y = (float)val.val.three_d.y;
-	info.splatDisplacementShapeCenter.z = (float)val.val.three_d.z;
-	 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_SHAPE_SIZE, val));
-	info.splatDisplacementShapeSize = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_ROTATION_Z,
+		[&](const AEGP_StreamValue& val) {
+			info.splatDisplacementRotation.z = (float)val.val.one_d;
+		}));
+
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_SHAPE_SCALE_X,
+		[&](const AEGP_StreamValue& val) {
+			info.splatDisplacementShapeScale.x = (float)val.val.one_d;
+		}));
+
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_SHAPE_SCALE_Y,
+		[&](const AEGP_StreamValue& val) {
+			info.splatDisplacementShapeScale.y = (float)val.val.one_d;
+		}));
+
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_SHAPE_SCALE_Z,
+		[&](const AEGP_StreamValue& val) {
+			info.splatDisplacementShapeScale.z = (float)val.val.one_d;
+		}));
+
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_SHAPE_CENTER,
+		[&](const AEGP_StreamValue& val) {
+			info.splatDisplacementShapeCenter.x = (float)val.val.three_d.x;
+			info.splatDisplacementShapeCenter.y = (float)val.val.three_d.y;
+			info.splatDisplacementShapeCenter.z = (float)val.val.three_d.z;
+		}));
+
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_DISPLACEMENT_SHAPE_SIZE,
+		[&](const AEGP_StreamValue& val) {
+			info.splatDisplacementShapeSize = (float)val.val.one_d;
+		}));
+
 
 	// ====== Splat Displacement  =======
 
 	// ====== Splat Dense  =======
 	info.splatDenseEnable = params[KIRI_SPLAT_DENSE_ENABLE]->u.bd.value;
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_DENSE_SHAPE_CENTER, val));
-	info.splatDenseShapeCenter.x = (float)val.val.three_d.x;
-	info.splatDenseShapeCenter.y = (float)val.val.three_d.y;
-	info.splatDenseShapeCenter.z = (float)val.val.three_d.z;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_DENSE_SHAPE_CENTER,
+		[&](const AEGP_StreamValue& val) {
+			info.splatDenseShapeCenter.x = (float)val.val.three_d.x;
+			info.splatDenseShapeCenter.y = (float)val.val.three_d.y;
+			info.splatDenseShapeCenter.z = (float)val.val.three_d.z;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_DENSE_SHAPE_SCALE_X, val));
-	info.splatDenseShapeScaleXYZ.x = (float)val.val.one_d;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_DENSE_SHAPE_SCALE_Y, val));
-	info.splatDenseShapeScaleXYZ.y = (float)val.val.one_d;
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_DENSE_SHAPE_SCALE_Z, val));
-	info.splatDenseShapeScaleXYZ.z = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_DENSE_SHAPE_SCALE_X,
+		[&](const AEGP_StreamValue& val) {
+			info.splatDenseShapeScaleXYZ.x = (float)val.val.one_d;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_DENSE_SHAPE_SIZE, val));
-	info.splatDenseShapeSize = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_DENSE_SHAPE_SCALE_Y,
+		[&](const AEGP_StreamValue& val) {
+			info.splatDenseShapeScaleXYZ.y = (float)val.val.one_d;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_DENSE_DENSITY, val));
-	info.splatDenseDensity = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_DENSE_SHAPE_SCALE_Z,
+		[&](const AEGP_StreamValue& val) {
+			info.splatDenseShapeScaleXYZ.z = (float)val.val.one_d;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_SPLAT_DENSE_SHAPE_FEATHER, val));
-	info.splatDenseShapeFeather = (float)val.val.one_d / 100.0;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_DENSE_SHAPE_SIZE,
+		[&](const AEGP_StreamValue& val) {
+			info.splatDenseShapeSize = (float)val.val.one_d;
+		}));
+
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_DENSE_DENSITY,
+		[&](const AEGP_StreamValue& val) {
+			info.splatDenseDensity = (float)val.val.one_d;
+		}));
+
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_SPLAT_DENSE_SHAPE_FEATHER,
+		[&](const AEGP_StreamValue& val) {
+			info.splatDenseShapeFeather = (float)val.val.one_d / 100.0;
+		}));
 	// ====== Splat Dense  =======
 
 	// ====== Splat Invert Sphere  =======
@@ -1260,35 +1151,53 @@ GetAEStreamValueInfo(
 	// ====== Splat Invert Sphere  =======
 
 	// ====== Advanced  =======
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_ADVANCED_CAMERA_FOCAL_LENGTH, val));
-	info.advancedCameraFocalLength = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_ADVANCED_CAMERA_FOCAL_LENGTH,
+		[&](const AEGP_StreamValue& val) {
+			info.advancedCameraFocalLength = (float)val.val.one_d;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_ADVANCED_SPLAT_CROP_NEAR, val));
-	info.advancedSplatCropNear = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_ADVANCED_SPLAT_CROP_NEAR,
+		[&](const AEGP_StreamValue& val) {
+			info.advancedSplatCropNear = (float)val.val.one_d;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_ADVANCED_SPLAT_CROP_FAR, val));
-	info.advancedSplatCropFar = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_ADVANCED_SPLAT_CROP_FAR,
+		[&](const AEGP_StreamValue& val) {
+			info.advancedSplatCropFar = (float)val.val.one_d;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_ADVANCED_SPLAT_CROP_MAX_SCALE, val));
-	info.advancedSplatCropMaxScale = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_ADVANCED_SPLAT_CROP_MAX_SCALE,
+		[&](const AEGP_StreamValue& val) {
+			info.advancedSplatCropMaxScale = (float)val.val.one_d;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_ADVANCED_SPLAT_CROP_MIN_SCALE, val));
-	info.advancedSplatCropMinScale = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_ADVANCED_SPLAT_CROP_MIN_SCALE,
+		[&](const AEGP_StreamValue& val) {
+			info.advancedSplatCropMinScale = (float)val.val.one_d;
+		}));
 
 	// ====== Dof  =======
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_ADVANCED_DOF_ENABLE, val));
-	info.advancedDofEnable = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_ADVANCED_DOF_ENABLE,
+		[&](const AEGP_StreamValue& val) {
+			info.advancedDofEnable = (float)val.val.one_d;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_ADVANCED_DOF_FOCUS_DISTANCE, val));
-	info.advancedDofFocusDistance = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_ADVANCED_DOF_FOCUS_DISTANCE,
+		[&](const AEGP_StreamValue& val) {
+			info.advancedDofFocusDistance = (float)val.val.one_d;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_ADVANCED_DOF_APERTURE, val));
-	info.advancedDofAperture = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_ADVANCED_DOF_APERTURE,
+		[&](const AEGP_StreamValue& val) {
+			info.advancedDofAperture = (float)val.val.one_d;
+		}));
 
-	ERR(GetStreamValue(suites, streamH, effectPH, timeT, KIRI_ADVANCED_DOF_BLUR_LEVEL, val));
-	info.advancedDofBlurLevel = (float)val.val.one_d;
+	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_ADVANCED_DOF_BLUR_LEVEL,
+		[&](const AEGP_StreamValue& val) {
+			info.advancedDofBlurLevel = (float)val.val.one_d;
+		}));
 	// ====== Dof  =======
-	
+
 	// ====== Glow =======
 	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_ADVANCED_GLOW_ENABLE,
 		[&](const AEGP_StreamValue& val) {
@@ -1312,8 +1221,11 @@ GetAEStreamValueInfo(
 			info.advancedGlowSmooth = (float)val.val.one_d;
 		}));
 	// ====== Glow =======
-	
+
 	// ====== Advanced  =======
+
+
+	// release
 
 	return err;
 }
