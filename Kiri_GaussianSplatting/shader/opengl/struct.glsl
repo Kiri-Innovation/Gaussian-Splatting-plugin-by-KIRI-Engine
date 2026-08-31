@@ -103,12 +103,6 @@ struct RenderInfo {
     float splatInvertSphereDistance;
     float splatInvertSphereCompression;
     
-    float advancedGlowEnable;
-    float advancedGlowBlendMode;
-    float advancedGlowRadius;
-    float advancedGlowThreshold;
-    float advancedGlowSmooth;
-    
     int splatCount;
     float focalPixelY;
 };

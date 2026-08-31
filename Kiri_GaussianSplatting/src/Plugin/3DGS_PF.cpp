@@ -1197,7 +1197,7 @@ GetAEStreamValueInfo(
 			info.advancedDofBlurLevel = (float)val.val.one_d;
 		}));
 	// ====== Dof  =======
-
+	
 	// ====== Glow =======
 	ERR(WithStreamValue(suites, effectPH, timeT, KIRI_ADVANCED_GLOW_ENABLE,
 		[&](const AEGP_StreamValue& val) {
@@ -1221,7 +1221,7 @@ GetAEStreamValueInfo(
 			info.advancedGlowSmooth = (float)val.val.one_d;
 		}));
 	// ====== Glow =======
-
+	
 	// ====== Advanced  =======
 
 
